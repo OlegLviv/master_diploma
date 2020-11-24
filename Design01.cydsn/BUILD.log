@@ -1,0 +1,18 @@
+--------------- Build Started: 11/21/2020 18:10:04 Project: Design01, Configuration: ARM GCC 5.4-2016-q2-update Debug ---------------
+The code generation step is up to date.
+arm-none-eabi-gcc.exe -mcpu=cortex-m0 -mthumb -I. -IGenerated_Source\PSoC4 -Wa,-alh=.\CortexM0\ARM_GCC_541\Debug/main.lst -g -D DEBUG -D CY_CORE_ID=0 -Wall -ffunction-sections -ffat-lto-objects -Og -c main.c -o .\CortexM0\ARM_GCC_541\Debug\main.o
+main.c: In function 'MyADC':
+main.c:70:11: warning: unused variable 'accumulator' [-Wunused-variable]
+     float accumulator = DigitalFilter_ProcessOneSample(result);
+           ^
+arm-none-eabi-ar.exe -rs .\CortexM0\ARM_GCC_541\Debug\Design01.a .\CortexM0\ARM_GCC_541\Debug\CyFlash.o .\CortexM0\ARM_GCC_541\Debug\CyLib.o .\CortexM0\ARM_GCC_541\Debug\cyPm.o .\CortexM0\ARM_GCC_541\Debug\cyutils.o .\CortexM0\ARM_GCC_541\Debug\CyLFClk.o .\CortexM0\ARM_GCC_541\Debug\cy_em_eeprom.o .\CortexM0\ARM_GCC_541\Debug\ADC.o .\CortexM0\ARM_GCC_541\Debug\ADC_PM.o .\CortexM0\ARM_GCC_541\Debug\ADC_INT.o .\CortexM0\ARM_GCC_541\Debug\ADC_Timer.o .\CortexM0\ARM_GCC_541\Debug\ADC_Timer_PM.o .\CortexM0\ARM_GCC_541\Debug\IDAC.o .\CortexM0\ARM_GCC_541\Debug\IDAC_PM.o .\CortexM0\ARM_GCC_541\Debug\isr_adc.o .\CortexM0\ARM_GCC_541\Debug\Pin_In.o .\CortexM0\ARM_GCC_541\Debug\Pin_In_PM.o .\CortexM0\ARM_GCC_541\Debug\Pin_Out.o .\CortexM0\ARM_GCC_541\Debug\Pin_Out_PM.o .\CortexM0\ARM_GCC_541\Debug\ADC_IRQ.o .\CortexM0\ARM_GCC_541\Debug\ADC_intClock.o .\CortexM0\ARM_GCC_541\Debug\D_UART.o .\CortexM0\ARM_GCC_541\Debug\D_UART_SPI_UART.o .\CortexM0\ARM_GCC_541\Debug\D_UART_SPI_UART_INT.o .\CortexM0\ARM_GCC_541\Debug\D_UART_PM.o .\CortexM0\ARM_GCC_541\Debug\D_UART_UART.o .\CortexM0\ARM_GCC_541\Debug\D_UART_BOOT.o .\CortexM0\ARM_GCC_541\Debug\D_UART_UART_BOOT.o .\CortexM0\ARM_GCC_541\Debug\D_UART_SCBCLK.o .\CortexM0\ARM_GCC_541\Debug\D_UART_tx.o .\CortexM0\ARM_GCC_541\Debug\D_UART_tx_PM.o .\CortexM0\ARM_GCC_541\Debug\RTC.o .\CortexM0\ARM_GCC_541\Debug\CyBootAsmGnu.o
+arm-none-eabi-ar.exe: creating .\CortexM0\ARM_GCC_541\Debug\Design01.a
+arm-none-eabi-gcc.exe -Wl,--start-group -o "C:\Users\okuntso\Documents\PSoC Creator\Diploma\Design01.cydsn\CortexM0\ARM_GCC_541\Debug\Design01.elf" .\CortexM0\ARM_GCC_541\Debug\main.o .\CortexM0\ARM_GCC_541\Debug\cyfitter_cfg.o .\CortexM0\ARM_GCC_541\Debug\cymetadata.o .\CortexM0\ARM_GCC_541\Debug\Cm0Start.o .\CortexM0\ARM_GCC_541\Debug\Design01.a -mcpu=cortex-m0 -mthumb -L Generated_Source\PSoC4 -Wl,-Map,.\CortexM0\ARM_GCC_541\Debug/Design01.map -T Generated_Source\PSoC4\cm0gcc.ld -specs=nano.specs -Wl,--gc-sections -g -ffunction-sections -Og -ffat-lto-objects -Wl,--end-group
+cyelftool.exe -C "C:\Users\okuntso\Documents\PSoC Creator\Diploma\Design01.cydsn\CortexM0\ARM_GCC_541\Debug\Design01.elf" --flash_row_size 128 --flash_size 32768 --flash_offset 0x00000000
+No ELF section .cychecksum found, creating one
+Application checksum calculated and stored in ELF section .cychecksum
+Checksum calculated and stored in ELF section .cymeta
+cyelftool.exe -S "C:\Users\okuntso\Documents\PSoC Creator\Diploma\Design01.cydsn\CortexM0\ARM_GCC_541\Debug\Design01.elf"
+Flash used: 28472 of 32768 bytes (86,9%).
+SRAM used: 2448 of 4096 bytes (59,8%). Stack: 1024 bytes. Heap: 768 bytes.
+--------------- Build Succeeded: 11/21/2020 18:10:05 ---------------

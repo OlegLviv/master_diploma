@@ -1,0 +1,1431 @@
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m0
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 0
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"main.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.syntax divided
+  20              		.global _printf_float
+  21              		.thumb
+  22              		.syntax unified
+  23              		.section	.text.ISR_SWITCH,"ax",%progbits
+  24              		.align	2
+  25              		.global	ISR_SWITCH
+  26              		.code	16
+  27              		.thumb_func
+  28              		.type	ISR_SWITCH, %function
+  29              	ISR_SWITCH:
+  30              	.LFB34:
+  31              		.file 1 "main.c"
+   1:main.c        **** /*****************************************************************************
+   2:main.c        **** * File Name: main.c
+   3:main.c        **** *
+   4:main.c        **** * Version: 1.10
+   5:main.c        **** *
+   6:main.c        **** * Description: This example demonstrates how to re-direct the printf function
+   7:main.c        **** * to use the UART API for transmitting data to the terminal.
+   8:main.c        **** *
+   9:main.c        **** * Related Document: CE224423_PSoC4_UART_printf.pdf 
+  10:main.c        **** *
+  11:main.c        **** * Hardware Dependency: CY8CKIT-042 PSoC 4 PIONEER KIT
+  12:main.c        **** *
+  13:main.c        **** ******************************************************************************
+  14:main.c        **** * Copyright (2018-2020), Cypress Semiconductor Corporation.
+  15:main.c        **** ******************************************************************************
+  16:main.c        **** * This software, including source code, documentation and related materials
+  17:main.c        **** * ("Software") is owned by Cypress Semiconductor Corporation (Cypress) and is
+  18:main.c        **** * protected by and subject to worldwide patent protection (United States and 
+  19:main.c        **** * foreign), United States copyright laws and international treaty provisions. 
+  20:main.c        **** * Cypress hereby grants to licensee a personal, non-exclusive, non-transferable
+  21:main.c        **** * license to copy, use, modify, create derivative works of, and compile the 
+  22:main.c        **** * Cypress source code and derivative works for the sole purpose of creating 
+  23:main.c        **** * custom software in support of licensee product, such licensee product to be
+  24:main.c        **** * used only in conjunction with Cypress's integrated circuit as specified in the
+  25:main.c        **** * applicable agreement. Any reproduction, modification, translation, compilation,
+  26:main.c        **** * or representation of this Software except as specified above is prohibited 
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 2
+
+
+  27:main.c        **** * without the express written permission of Cypress.
+  28:main.c        **** * 
+  29:main.c        **** * Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND, 
+  30:main.c        **** * EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED 
+  31:main.c        **** * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+  32:main.c        **** * Cypress reserves the right to make changes to the Software without notice. 
+  33:main.c        **** * Cypress does not assume any liability arising out of the application or use
+  34:main.c        **** * of Software or any product or circuit described in the Software. Cypress does
+  35:main.c        **** * not authorize its products for use as critical components in any products 
+  36:main.c        **** * where a malfunction or failure may reasonably be expected to result in 
+  37:main.c        **** * significant injury or death ("ACTIVE Risk Product"). By including Cypress's 
+  38:main.c        **** * product in a ACTIVE Risk Product, the manufacturer of such system or application
+  39:main.c        **** * assumes all risk of such use and in doing so indemnifies Cypress against all
+  40:main.c        **** * liability. Use of this Software may be limited by and subject to the applicable
+  41:main.c        **** * Cypress software license agreement.
+  42:main.c        **** *****************************************************************************/
+  43:main.c        **** 
+  44:main.c        **** #include <project.h>
+  45:main.c        **** #include <stdio.h>
+  46:main.c        **** 
+  47:main.c        **** /*******************************************************************************
+  48:main.c        **** *            Global variables
+  49:main.c        **** *******************************************************************************/
+  50:main.c        **** uint8 pressCount  = 0; // Keeps track of button presses
+  51:main.c        **** uint8 printStatus = 0; // Flag for printing
+  52:main.c        **** 
+  53:main.c        **** /*******************************************************************************
+  54:main.c        **** * Function Name: _write
+  55:main.c        **** ********************************************************************************
+  56:main.c        **** *
+  57:main.c        **** * Summary: 
+  58:main.c        **** *   This version of _write sends text via UART. printf is redirected to 
+  59:main.c        **** *   this function when GCC compiler is used to print data to terminal using UART. 
+  60:main.c        **** *   Note that depending on your compiler you may need to rewrite a different
+  61:main.c        **** *   function that is linked to printf.
+  62:main.c        **** * 
+  63:main.c        **** * Parameters:
+  64:main.c        **** *   file: This variable is not used.
+  65:main.c        **** *   *ptr: Pointer to the data which will be transfered through UART.
+  66:main.c        **** *   len: Length of the data to be transfered through UART.
+  67:main.c        **** * 
+  68:main.c        **** * Returns: 
+  69:main.c        **** *   returns the number of characters transferred using UART.
+  70:main.c        **** *
+  71:main.c        **** *******************************************************************************/
+  72:main.c        **** #if defined (__GNUC__) 
+  73:main.c        ****     
+  74:main.c        ****     /* Add an explicit reference to the floating point printf library to allow 
+  75:main.c        ****        use of floating point conversion specifier. */     
+  76:main.c        ****     asm (".global _printf_float"); 
+  77:main.c        ****  
+  78:main.c        ****     /* For GCC compiler revise _write() function for printf functionality */     
+  79:main.c        **** 	int _write(int file, char *ptr, int len) 
+  80:main.c        ****     {       
+  81:main.c        ****         /* Warning suppression for unused function parameter */
+  82:main.c        **** 		file = file;
+  83:main.c        **** 		
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 3
+
+
+  84:main.c        **** 		int i; 
+  85:main.c        ****         /* Character is sent via UART */
+  86:main.c        ****         for (i = 0; i < len; i++) 
+  87:main.c        ****         { 
+  88:main.c        ****             UART_UartPutChar(*(ptr++)); 
+  89:main.c        ****         }          
+  90:main.c        ****         return(len); 
+  91:main.c        ****     } 
+  92:main.c        **** #endif /* (__GNUC__) */
+  93:main.c        **** 
+  94:main.c        **** /***************************************************************************//**
+  95:main.c        **** * Function Name: ISR_SWITCH
+  96:main.c        **** ********************************************************************************
+  97:main.c        **** *
+  98:main.c        **** * Summary:
+  99:main.c        **** * This function is executed when the GPIO interrupt is triggered by the switch
+ 100:main.c        **** * This ISR
+ 101:main.c        **** *   1. Clears the interrupt source.
+ 102:main.c        **** *   2. Increments the count and sets printStatus flag.
+ 103:main.c        **** *
+ 104:main.c        **** * Parameters:
+ 105:main.c        **** *  None
+ 106:main.c        **** *
+ 107:main.c        **** * Return:
+ 108:main.c        **** *  None
+ 109:main.c        **** *
+ 110:main.c        **** *******************************************************************************/
+ 111:main.c        **** CY_ISR(ISR_SWITCH)
+ 112:main.c        **** {
+  32              		.loc 1 112 0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36 0000 10B5     		push	{r4, lr}
+  37              		.cfi_def_cfa_offset 8
+  38              		.cfi_offset 4, -8
+  39              		.cfi_offset 14, -4
+ 113:main.c        **** 	/* Clears interrupt for button */
+ 114:main.c        ****     switch_pin_ClearInterrupt();
+  40              		.loc 1 114 0
+  41 0002 FFF7FEFF 		bl	switch_pin_ClearInterrupt
+  42              	.LVL0:
+ 115:main.c        **** 	
+ 116:main.c        **** 	/* Clears pending interrupts */
+ 117:main.c        ****     InputInterrupt_ClearPending();
+  43              		.loc 1 117 0
+  44 0006 FFF7FEFF 		bl	InputInterrupt_ClearPending
+  45              	.LVL1:
+ 118:main.c        **** 	
+ 119:main.c        **** 	/* Updates button count and printing state */
+ 120:main.c        ****     pressCount++;
+  46              		.loc 1 120 0
+  47 000a 034B     		ldr	r3, .L2
+  48 000c 1A78     		ldrb	r2, [r3]
+  49 000e 0132     		adds	r2, r2, #1
+  50 0010 1A70     		strb	r2, [r3]
+ 121:main.c        ****     printStatus = 1;
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 4
+
+
+  51              		.loc 1 121 0
+  52 0012 0122     		movs	r2, #1
+  53 0014 5A70     		strb	r2, [r3, #1]
+ 122:main.c        ****     
+ 123:main.c        **** }
+  54              		.loc 1 123 0
+  55              		@ sp needed
+  56 0016 10BD     		pop	{r4, pc}
+  57              	.L3:
+  58              		.align	2
+  59              	.L2:
+  60 0018 00000000 		.word	.LANCHOR0
+  61              		.cfi_endproc
+  62              	.LFE34:
+  63              		.size	ISR_SWITCH, .-ISR_SWITCH
+  64              		.section	.text._write,"ax",%progbits
+  65              		.align	2
+  66              		.global	_write
+  67              		.code	16
+  68              		.thumb_func
+  69              		.type	_write, %function
+  70              	_write:
+  71              	.LFB33:
+  80:main.c        ****         /* Warning suppression for unused function parameter */
+  72              		.loc 1 80 0
+  73              		.cfi_startproc
+  74              		@ args = 0, pretend = 0, frame = 0
+  75              		@ frame_needed = 0, uses_anonymous_args = 0
+  76              	.LVL2:
+  77 0000 70B5     		push	{r4, r5, r6, lr}
+  78              		.cfi_def_cfa_offset 16
+  79              		.cfi_offset 4, -16
+  80              		.cfi_offset 5, -12
+  81              		.cfi_offset 6, -8
+  82              		.cfi_offset 14, -4
+  83 0002 1600     		movs	r6, r2
+  84              	.LVL3:
+  86:main.c        ****         { 
+  85              		.loc 1 86 0
+  86 0004 0024     		movs	r4, #0
+  87 0006 05E0     		b	.L5
+  88              	.LVL4:
+  89              	.L6:
+  88:main.c        ****         }          
+  90              		.loc 1 88 0 discriminator 3
+  91 0008 4D1C     		adds	r5, r1, #1
+  92              	.LVL5:
+  93 000a 0878     		ldrb	r0, [r1]
+  94 000c FFF7FEFF 		bl	UART_SpiUartWriteTxData
+  95              	.LVL6:
+  86:main.c        ****         { 
+  96              		.loc 1 86 0 discriminator 3
+  97 0010 0134     		adds	r4, r4, #1
+  98              	.LVL7:
+  88:main.c        ****         }          
+  99              		.loc 1 88 0 discriminator 3
+ 100 0012 2900     		movs	r1, r5
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 5
+
+
+ 101              	.LVL8:
+ 102              	.L5:
+  86:main.c        ****         { 
+ 103              		.loc 1 86 0 discriminator 1
+ 104 0014 B442     		cmp	r4, r6
+ 105 0016 F7DB     		blt	.L6
+  91:main.c        **** #endif /* (__GNUC__) */
+ 106              		.loc 1 91 0
+ 107 0018 3000     		movs	r0, r6
+ 108              		@ sp needed
+ 109              	.LVL9:
+ 110              	.LVL10:
+ 111 001a 70BD     		pop	{r4, r5, r6, pc}
+ 112              		.cfi_endproc
+ 113              	.LFE33:
+ 114              		.size	_write, .-_write
+ 115              		.section	.text.main,"ax",%progbits
+ 116              		.align	2
+ 117              		.global	main
+ 118              		.code	16
+ 119              		.thumb_func
+ 120              		.type	main, %function
+ 121              	main:
+ 122              	.LFB35:
+ 124:main.c        **** 
+ 125:main.c        **** /*******************************************************************************
+ 126:main.c        **** * Function Name: main
+ 127:main.c        **** ********************************************************************************
+ 128:main.c        **** *
+ 129:main.c        **** *  The main function performs the following actions:
+ 130:main.c        **** *   1. Input/switch interrupt is set up and enabled.
+ 131:main.c        **** *   2. Initializes the UART components.
+ 132:main.c        **** *   3. Global interrupt enabled.
+ 133:main.c        **** *   4. UART sends the header to the terminal.
+ 134:main.c        **** *   5. printf is tested once.
+ 135:main.c        **** *   6. Each time interrupt occurs/switch is pressed the count and flags are set.
+ 136:main.c        **** *   7. When printStatus is set high, printf is used to indicate number pressed.
+ 137:main.c        **** *
+ 138:main.c        **** *******************************************************************************/
+ 139:main.c        **** int main(void)
+ 140:main.c        **** {
+ 123              		.loc 1 140 0
+ 124              		.cfi_startproc
+ 125              		@ args = 0, pretend = 0, frame = 0
+ 126              		@ frame_needed = 0, uses_anonymous_args = 0
+ 127 0000 10B5     		push	{r4, lr}
+ 128              		.cfi_def_cfa_offset 8
+ 129              		.cfi_offset 4, -8
+ 130              		.cfi_offset 14, -4
+ 131              	.LVL11:
+ 141:main.c        ****     int32 integerNum = -212121; 
+ 142:main.c        ****     float floatNum = 37.37f;
+ 143:main.c        **** 
+ 144:main.c        ****     /* Input interrupt and sets the interrupt service routine*/
+ 145:main.c        ****     InputInterrupt_StartEx(ISR_SWITCH);
+ 132              		.loc 1 145 0
+ 133 0002 1548     		ldr	r0, .L10
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 6
+
+
+ 134 0004 FFF7FEFF 		bl	InputInterrupt_StartEx
+ 135              	.LVL12:
+ 146:main.c        ****     
+ 147:main.c        ****     /* Ensure that interrupts are clear */
+ 148:main.c        ****     InputInterrupt_ClearPending();
+ 136              		.loc 1 148 0
+ 137 0008 FFF7FEFF 		bl	InputInterrupt_ClearPending
+ 138              	.LVL13:
+ 149:main.c        ****     
+ 150:main.c        ****     /* Start UART operation */
+ 151:main.c        ****     UART_Start();
+ 139              		.loc 1 151 0
+ 140 000c FFF7FEFF 		bl	UART_Start
+ 141              	.LVL14:
+ 152:main.c        ****     
+ 153:main.c        ****     /* Enable global interrupts */
+ 154:main.c        ****     CyGlobalIntEnable; 
+ 142              		.loc 1 154 0
+ 143              		.syntax divided
+ 144              	@ 154 "main.c" 1
+ 145 0010 62B6     		CPSIE   i
+ 146              	@ 0 "" 2
+ 155:main.c        ****     
+ 156:main.c        ****     /* Transmit header to the terminal */
+ 157:main.c        ****     UART_UartPutString("\r\n***********************************************************************
+ 147              		.loc 1 157 0
+ 148              		.thumb
+ 149              		.syntax unified
+ 150 0012 1248     		ldr	r0, .L10+4
+ 151 0014 FFF7FEFF 		bl	UART_UartPutString
+ 152              	.LVL15:
+ 158:main.c        ****     UART_UartPutString("This example demonstrates UART operation with printf \r\n");
+ 153              		.loc 1 158 0
+ 154 0018 1148     		ldr	r0, .L10+8
+ 155 001a FFF7FEFF 		bl	UART_UartPutString
+ 156              	.LVL16:
+ 159:main.c        ****     UART_UartPutString("If you see this text the terminal connection is configured correctly.\r\n")
+ 157              		.loc 1 159 0
+ 158 001e 1148     		ldr	r0, .L10+12
+ 159 0020 FFF7FEFF 		bl	UART_UartPutString
+ 160              	.LVL17:
+ 160:main.c        ****     UART_UartPutString("Push button to see printf function used to print on terminal.\r\n");
+ 161              		.loc 1 160 0
+ 162 0024 1048     		ldr	r0, .L10+16
+ 163 0026 FFF7FEFF 		bl	UART_UartPutString
+ 164              	.LVL18:
+ 161:main.c        ****     UART_UartPutString("\r\n");
+ 165              		.loc 1 161 0
+ 166 002a 1048     		ldr	r0, .L10+20
+ 167 002c FFF7FEFF 		bl	UART_UartPutString
+ 168              	.LVL19:
+ 162:main.c        ****     
+ 163:main.c        ****     printf("Testing printf function. long: %ld , float: %f \r\n", integerNum, floatNum);
+ 169              		.loc 1 163 0
+ 170 0030 8022     		movs	r2, #128
+ 171 0032 9205     		lsls	r2, r2, #22
+ 172 0034 0E4B     		ldr	r3, .L10+24
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 7
+
+
+ 173 0036 0F49     		ldr	r1, .L10+28
+ 174 0038 0F48     		ldr	r0, .L10+32
+ 175 003a FFF7FEFF 		bl	printf
+ 176              	.LVL20:
+ 177              	.L8:
+ 164:main.c        ****     
+ 165:main.c        ****     for(;;)
+ 166:main.c        ****     {
+ 167:main.c        ****         /* Printf transmit via UART to terminal number of switch presses */
+ 168:main.c        ****         if(printStatus)
+ 178              		.loc 1 168 0
+ 179 003e 0F4B     		ldr	r3, .L10+36
+ 180 0040 5B78     		ldrb	r3, [r3, #1]
+ 181 0042 002B     		cmp	r3, #0
+ 182 0044 FBD0     		beq	.L8
+ 169:main.c        ****         {
+ 170:main.c        ****             printStatus = 0;
+ 183              		.loc 1 170 0
+ 184 0046 0D4B     		ldr	r3, .L10+36
+ 185 0048 0022     		movs	r2, #0
+ 186 004a 5A70     		strb	r2, [r3, #1]
+ 171:main.c        ****             printf("Number of times button has been pressed = %d\r\n", pressCount);
+ 187              		.loc 1 171 0
+ 188 004c 1978     		ldrb	r1, [r3]
+ 189 004e 0C48     		ldr	r0, .L10+40
+ 190 0050 FFF7FEFF 		bl	printf
+ 191              	.LVL21:
+ 192 0054 F3E7     		b	.L8
+ 193              	.L11:
+ 194 0056 C046     		.align	2
+ 195              	.L10:
+ 196 0058 00000000 		.word	ISR_SWITCH
+ 197 005c 00000000 		.word	.LC2
+ 198 0060 58000000 		.word	.LC4
+ 199 0064 90000000 		.word	.LC6
+ 200 0068 D8000000 		.word	.LC8
+ 201 006c 18010000 		.word	.LC10
+ 202 0070 5CAF4240 		.word	1078112092
+ 203 0074 67C3FCFF 		.word	-212121
+ 204 0078 1C010000 		.word	.LC12
+ 205 007c 00000000 		.word	.LANCHOR0
+ 206 0080 50010000 		.word	.LC15
+ 207              		.cfi_endproc
+ 208              	.LFE35:
+ 209              		.size	main, .-main
+ 210              		.global	printStatus
+ 211              		.global	pressCount
+ 212              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 213              		.align	2
+ 214              	.LC2:
+ 215 0000 0D0A2A2A 		.ascii	"\015\012*******************************************"
+ 215      2A2A2A2A 
+ 215      2A2A2A2A 
+ 215      2A2A2A2A 
+ 215      2A2A2A2A 
+ 216 002d 2A2A2A2A 		.ascii	"***************************************\015\012\000"
+ 216      2A2A2A2A 
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 8
+
+
+ 216      2A2A2A2A 
+ 216      2A2A2A2A 
+ 216      2A2A2A2A 
+ 217 0057 00       		.space	1
+ 218              	.LC4:
+ 219 0058 54686973 		.ascii	"This example demonstrates UART operation with print"
+ 219      20657861 
+ 219      6D706C65 
+ 219      2064656D 
+ 219      6F6E7374 
+ 220 008b 66200D0A 		.ascii	"f \015\012\000"
+ 220      00
+ 221              	.LC6:
+ 222 0090 49662079 		.ascii	"If you see this text the terminal connection is con"
+ 222      6F752073 
+ 222      65652074 
+ 222      68697320 
+ 222      74657874 
+ 223 00c3 66696775 		.ascii	"figured correctly.\015\012\000"
+ 223      72656420 
+ 223      636F7272 
+ 223      6563746C 
+ 223      792E0D0A 
+ 224              	.LC8:
+ 225 00d8 50757368 		.ascii	"Push button to see printf function used to print on"
+ 225      20627574 
+ 225      746F6E20 
+ 225      746F2073 
+ 225      65652070 
+ 226 010b 20746572 		.ascii	" terminal.\015\012\000"
+ 226      6D696E61 
+ 226      6C2E0D0A 
+ 226      00
+ 227              	.LC10:
+ 228 0118 0D0A00   		.ascii	"\015\012\000"
+ 229 011b 00       		.space	1
+ 230              	.LC12:
+ 231 011c 54657374 		.ascii	"Testing printf function. long: %ld , float: %f \015"
+ 231      696E6720 
+ 231      7072696E 
+ 231      74662066 
+ 231      756E6374 
+ 232 014c 0A00     		.ascii	"\012\000"
+ 233 014e 0000     		.space	2
+ 234              	.LC15:
+ 235 0150 4E756D62 		.ascii	"Number of times button has been pressed = %d\015\012"
+ 235      6572206F 
+ 235      66207469 
+ 235      6D657320 
+ 235      62757474 
+ 236 017e 00       		.ascii	"\000"
+ 237              		.bss
+ 238              		.set	.LANCHOR0,. + 0
+ 239              		.type	pressCount, %object
+ 240              		.size	pressCount, 1
+ 241              	pressCount:
+ 242 0000 00       		.space	1
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 9
+
+
+ 243              		.type	printStatus, %object
+ 244              		.size	printStatus, 1
+ 245              	printStatus:
+ 246 0001 00       		.space	1
+ 247              		.text
+ 248              	.Letext0:
+ 249              		.file 2 "Generated_Source\\PSoC4/cytypes.h"
+ 250              		.file 3 "Generated_Source\\PSoC4/switch_pin.h"
+ 251              		.file 4 "Generated_Source\\PSoC4/InputInterrupt.h"
+ 252              		.file 5 "Generated_Source\\PSoC4/UART_SPI_UART.h"
+ 253              		.file 6 "Generated_Source\\PSoC4/UART.h"
+ 254              		.file 7 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4.
+ 255              		.section	.debug_info,"",%progbits
+ 256              	.Ldebug_info0:
+ 257 0000 B1020000 		.4byte	0x2b1
+ 258 0004 0400     		.2byte	0x4
+ 259 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 260 000a 04       		.byte	0x4
+ 261 000b 01       		.uleb128 0x1
+ 262 000c 38010000 		.4byte	.LASF29
+ 263 0010 0C       		.byte	0xc
+ 264 0011 E4010000 		.4byte	.LASF30
+ 265 0015 62000000 		.4byte	.LASF31
+ 266 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 267 001d 00000000 		.4byte	0
+ 268 0021 00000000 		.4byte	.Ldebug_line0
+ 269 0025 02       		.uleb128 0x2
+ 270 0026 01       		.byte	0x1
+ 271 0027 06       		.byte	0x6
+ 272 0028 4C020000 		.4byte	.LASF0
+ 273 002c 02       		.uleb128 0x2
+ 274 002d 01       		.byte	0x1
+ 275 002e 08       		.byte	0x8
+ 276 002f 54000000 		.4byte	.LASF1
+ 277 0033 02       		.uleb128 0x2
+ 278 0034 02       		.byte	0x2
+ 279 0035 05       		.byte	0x5
+ 280 0036 00020000 		.4byte	.LASF2
+ 281 003a 02       		.uleb128 0x2
+ 282 003b 02       		.byte	0x2
+ 283 003c 07       		.byte	0x7
+ 284 003d 58020000 		.4byte	.LASF3
+ 285 0041 02       		.uleb128 0x2
+ 286 0042 04       		.byte	0x4
+ 287 0043 05       		.byte	0x5
+ 288 0044 37020000 		.4byte	.LASF4
+ 289 0048 02       		.uleb128 0x2
+ 290 0049 04       		.byte	0x4
+ 291 004a 07       		.byte	0x7
+ 292 004b C0000000 		.4byte	.LASF5
+ 293 004f 02       		.uleb128 0x2
+ 294 0050 08       		.byte	0x8
+ 295 0051 05       		.byte	0x5
+ 296 0052 D6010000 		.4byte	.LASF6
+ 297 0056 02       		.uleb128 0x2
+ 298 0057 08       		.byte	0x8
+ 299 0058 07       		.byte	0x7
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 10
+
+
+ 300 0059 21010000 		.4byte	.LASF7
+ 301 005d 03       		.uleb128 0x3
+ 302 005e 04       		.byte	0x4
+ 303 005f 05       		.byte	0x5
+ 304 0060 696E7400 		.ascii	"int\000"
+ 305 0064 02       		.uleb128 0x2
+ 306 0065 04       		.byte	0x4
+ 307 0066 07       		.byte	0x7
+ 308 0067 14010000 		.4byte	.LASF8
+ 309 006b 04       		.uleb128 0x4
+ 310 006c 15020000 		.4byte	.LASF9
+ 311 0070 02       		.byte	0x2
+ 312 0071 E401     		.2byte	0x1e4
+ 313 0073 2C000000 		.4byte	0x2c
+ 314 0077 04       		.uleb128 0x4
+ 315 0078 0D010000 		.4byte	.LASF10
+ 316 007c 02       		.byte	0x2
+ 317 007d E601     		.2byte	0x1e6
+ 318 007f 48000000 		.4byte	0x48
+ 319 0083 04       		.uleb128 0x4
+ 320 0084 D2000000 		.4byte	.LASF11
+ 321 0088 02       		.byte	0x2
+ 322 0089 E901     		.2byte	0x1e9
+ 323 008b 41000000 		.4byte	0x41
+ 324 008f 02       		.uleb128 0x2
+ 325 0090 04       		.byte	0x4
+ 326 0091 04       		.byte	0x4
+ 327 0092 00000000 		.4byte	.LASF12
+ 328 0096 02       		.uleb128 0x2
+ 329 0097 08       		.byte	0x8
+ 330 0098 04       		.byte	0x4
+ 331 0099 1E000000 		.4byte	.LASF13
+ 332 009d 02       		.uleb128 0x2
+ 333 009e 01       		.byte	0x1
+ 334 009f 08       		.byte	0x8
+ 335 00a0 EB010000 		.4byte	.LASF14
+ 336 00a4 02       		.uleb128 0x2
+ 337 00a5 08       		.byte	0x8
+ 338 00a6 04       		.byte	0x4
+ 339 00a7 40020000 		.4byte	.LASF15
+ 340 00ab 02       		.uleb128 0x2
+ 341 00ac 04       		.byte	0x4
+ 342 00ad 07       		.byte	0x7
+ 343 00ae CD010000 		.4byte	.LASF16
+ 344 00b2 05       		.uleb128 0x5
+ 345 00b3 04       		.byte	0x4
+ 346 00b4 9D000000 		.4byte	0x9d
+ 347 00b8 06       		.uleb128 0x6
+ 348 00b9 B5000000 		.4byte	.LASF32
+ 349 00bd 01       		.byte	0x1
+ 350 00be 6F       		.byte	0x6f
+ 351 00bf 00000000 		.4byte	.LFB34
+ 352 00c3 1C000000 		.4byte	.LFE34-.LFB34
+ 353 00c7 01       		.uleb128 0x1
+ 354 00c8 9C       		.byte	0x9c
+ 355 00c9 E0000000 		.4byte	0xe0
+ 356 00cd 07       		.uleb128 0x7
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 11
+
+
+ 357 00ce 06000000 		.4byte	.LVL0
+ 358 00d2 65020000 		.4byte	0x265
+ 359 00d6 07       		.uleb128 0x7
+ 360 00d7 0A000000 		.4byte	.LVL1
+ 361 00db 70020000 		.4byte	0x270
+ 362 00df 00       		.byte	0
+ 363 00e0 08       		.uleb128 0x8
+ 364 00e1 C6010000 		.4byte	.LASF33
+ 365 00e5 01       		.byte	0x1
+ 366 00e6 4F       		.byte	0x4f
+ 367 00e7 5D000000 		.4byte	0x5d
+ 368 00eb 00000000 		.4byte	.LFB33
+ 369 00ef 1C000000 		.4byte	.LFE33-.LFB33
+ 370 00f3 01       		.uleb128 0x1
+ 371 00f4 9C       		.byte	0x9c
+ 372 00f5 3D010000 		.4byte	0x13d
+ 373 00f9 09       		.uleb128 0x9
+ 374 00fa 4F000000 		.4byte	.LASF17
+ 375 00fe 01       		.byte	0x1
+ 376 00ff 4F       		.byte	0x4f
+ 377 0100 5D000000 		.4byte	0x5d
+ 378 0104 00000000 		.4byte	.LLST0
+ 379 0108 0A       		.uleb128 0xa
+ 380 0109 70747200 		.ascii	"ptr\000"
+ 381 010d 01       		.byte	0x1
+ 382 010e 4F       		.byte	0x4f
+ 383 010f B2000000 		.4byte	0xb2
+ 384 0113 21000000 		.4byte	.LLST1
+ 385 0117 0A       		.uleb128 0xa
+ 386 0118 6C656E00 		.ascii	"len\000"
+ 387 011c 01       		.byte	0x1
+ 388 011d 4F       		.byte	0x4f
+ 389 011e 5D000000 		.4byte	0x5d
+ 390 0122 4A000000 		.4byte	.LLST2
+ 391 0126 0B       		.uleb128 0xb
+ 392 0127 6900     		.ascii	"i\000"
+ 393 0129 01       		.byte	0x1
+ 394 012a 54       		.byte	0x54
+ 395 012b 5D000000 		.4byte	0x5d
+ 396 012f 73000000 		.4byte	.LLST3
+ 397 0133 07       		.uleb128 0x7
+ 398 0134 10000000 		.4byte	.LVL6
+ 399 0138 7B020000 		.4byte	0x27b
+ 400 013c 00       		.byte	0
+ 401 013d 0C       		.uleb128 0xc
+ 402 013e 08010000 		.4byte	.LASF34
+ 403 0142 01       		.byte	0x1
+ 404 0143 8B       		.byte	0x8b
+ 405 0144 5D000000 		.4byte	0x5d
+ 406 0148 00000000 		.4byte	.LFB35
+ 407 014c 84000000 		.4byte	.LFE35-.LFB35
+ 408 0150 01       		.uleb128 0x1
+ 409 0151 9C       		.byte	0x9c
+ 410 0152 43020000 		.4byte	0x243
+ 411 0156 0D       		.uleb128 0xd
+ 412 0157 FD000000 		.4byte	.LASF18
+ 413 015b 01       		.byte	0x1
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 12
+
+
+ 414 015c 8D       		.byte	0x8d
+ 415 015d 83000000 		.4byte	0x83
+ 416 0161 E78673   		.sleb128 -212121
+ 417 0164 0E       		.uleb128 0xe
+ 418 0165 F7010000 		.4byte	.LASF19
+ 419 0169 01       		.byte	0x1
+ 420 016a 8E       		.byte	0x8e
+ 421 016b 8F000000 		.4byte	0x8f
+ 422 016f 04       		.byte	0x4
+ 423 0170 E17A1542 		.4byte	0x42157ae1
+ 424 0174 0F       		.uleb128 0xf
+ 425 0175 08000000 		.4byte	.LVL12
+ 426 0179 87020000 		.4byte	0x287
+ 427 017d 8B010000 		.4byte	0x18b
+ 428 0181 10       		.uleb128 0x10
+ 429 0182 01       		.uleb128 0x1
+ 430 0183 50       		.byte	0x50
+ 431 0184 05       		.uleb128 0x5
+ 432 0185 03       		.byte	0x3
+ 433 0186 00000000 		.4byte	ISR_SWITCH
+ 434 018a 00       		.byte	0
+ 435 018b 07       		.uleb128 0x7
+ 436 018c 0C000000 		.4byte	.LVL13
+ 437 0190 70020000 		.4byte	0x270
+ 438 0194 07       		.uleb128 0x7
+ 439 0195 10000000 		.4byte	.LVL14
+ 440 0199 92020000 		.4byte	0x292
+ 441 019d 0F       		.uleb128 0xf
+ 442 019e 18000000 		.4byte	.LVL15
+ 443 01a2 9D020000 		.4byte	0x29d
+ 444 01a6 B4010000 		.4byte	0x1b4
+ 445 01aa 10       		.uleb128 0x10
+ 446 01ab 01       		.uleb128 0x1
+ 447 01ac 50       		.byte	0x50
+ 448 01ad 05       		.uleb128 0x5
+ 449 01ae 03       		.byte	0x3
+ 450 01af 00000000 		.4byte	.LC2
+ 451 01b3 00       		.byte	0
+ 452 01b4 0F       		.uleb128 0xf
+ 453 01b5 1E000000 		.4byte	.LVL16
+ 454 01b9 9D020000 		.4byte	0x29d
+ 455 01bd CB010000 		.4byte	0x1cb
+ 456 01c1 10       		.uleb128 0x10
+ 457 01c2 01       		.uleb128 0x1
+ 458 01c3 50       		.byte	0x50
+ 459 01c4 05       		.uleb128 0x5
+ 460 01c5 03       		.byte	0x3
+ 461 01c6 58000000 		.4byte	.LC4
+ 462 01ca 00       		.byte	0
+ 463 01cb 0F       		.uleb128 0xf
+ 464 01cc 24000000 		.4byte	.LVL17
+ 465 01d0 9D020000 		.4byte	0x29d
+ 466 01d4 E2010000 		.4byte	0x1e2
+ 467 01d8 10       		.uleb128 0x10
+ 468 01d9 01       		.uleb128 0x1
+ 469 01da 50       		.byte	0x50
+ 470 01db 05       		.uleb128 0x5
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 13
+
+
+ 471 01dc 03       		.byte	0x3
+ 472 01dd 90000000 		.4byte	.LC6
+ 473 01e1 00       		.byte	0
+ 474 01e2 0F       		.uleb128 0xf
+ 475 01e3 2A000000 		.4byte	.LVL18
+ 476 01e7 9D020000 		.4byte	0x29d
+ 477 01eb F9010000 		.4byte	0x1f9
+ 478 01ef 10       		.uleb128 0x10
+ 479 01f0 01       		.uleb128 0x1
+ 480 01f1 50       		.byte	0x50
+ 481 01f2 05       		.uleb128 0x5
+ 482 01f3 03       		.byte	0x3
+ 483 01f4 D8000000 		.4byte	.LC8
+ 484 01f8 00       		.byte	0
+ 485 01f9 0F       		.uleb128 0xf
+ 486 01fa 30000000 		.4byte	.LVL19
+ 487 01fe 9D020000 		.4byte	0x29d
+ 488 0202 10020000 		.4byte	0x210
+ 489 0206 10       		.uleb128 0x10
+ 490 0207 01       		.uleb128 0x1
+ 491 0208 50       		.byte	0x50
+ 492 0209 05       		.uleb128 0x5
+ 493 020a 03       		.byte	0x3
+ 494 020b 18010000 		.4byte	.LC10
+ 495 020f 00       		.byte	0
+ 496 0210 0F       		.uleb128 0xf
+ 497 0211 3E000000 		.4byte	.LVL20
+ 498 0215 A9020000 		.4byte	0x2a9
+ 499 0219 2F020000 		.4byte	0x22f
+ 500 021d 10       		.uleb128 0x10
+ 501 021e 01       		.uleb128 0x1
+ 502 021f 50       		.byte	0x50
+ 503 0220 05       		.uleb128 0x5
+ 504 0221 03       		.byte	0x3
+ 505 0222 1C010000 		.4byte	.LC12
+ 506 0226 10       		.uleb128 0x10
+ 507 0227 01       		.uleb128 0x1
+ 508 0228 51       		.byte	0x51
+ 509 0229 04       		.uleb128 0x4
+ 510 022a 11       		.byte	0x11
+ 511 022b E78673   		.sleb128 -212121
+ 512 022e 00       		.byte	0
+ 513 022f 11       		.uleb128 0x11
+ 514 0230 54000000 		.4byte	.LVL21
+ 515 0234 A9020000 		.4byte	0x2a9
+ 516 0238 10       		.uleb128 0x10
+ 517 0239 01       		.uleb128 0x1
+ 518 023a 50       		.byte	0x50
+ 519 023b 05       		.uleb128 0x5
+ 520 023c 03       		.byte	0x3
+ 521 023d 50010000 		.4byte	.LC15
+ 522 0241 00       		.byte	0
+ 523 0242 00       		.byte	0
+ 524 0243 12       		.uleb128 0x12
+ 525 0244 0A020000 		.4byte	.LASF20
+ 526 0248 01       		.byte	0x1
+ 527 0249 32       		.byte	0x32
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 14
+
+
+ 528 024a 6B000000 		.4byte	0x6b
+ 529 024e 05       		.uleb128 0x5
+ 530 024f 03       		.byte	0x3
+ 531 0250 00000000 		.4byte	pressCount
+ 532 0254 12       		.uleb128 0x12
+ 533 0255 6B020000 		.4byte	.LASF21
+ 534 0259 01       		.byte	0x1
+ 535 025a 33       		.byte	0x33
+ 536 025b 6B000000 		.4byte	0x6b
+ 537 025f 05       		.uleb128 0x5
+ 538 0260 03       		.byte	0x3
+ 539 0261 00000000 		.4byte	printStatus
+ 540 0265 13       		.uleb128 0x13
+ 541 0266 E3000000 		.4byte	.LASF22
+ 542 026a E3000000 		.4byte	.LASF22
+ 543 026e 03       		.byte	0x3
+ 544 026f 39       		.byte	0x39
+ 545 0270 13       		.uleb128 0x13
+ 546 0271 1B020000 		.4byte	.LASF23
+ 547 0275 1B020000 		.4byte	.LASF23
+ 548 0279 04       		.byte	0x4
+ 549 027a 28       		.byte	0x28
+ 550 027b 14       		.uleb128 0x14
+ 551 027c 06000000 		.4byte	.LASF24
+ 552 0280 06000000 		.4byte	.LASF24
+ 553 0284 05       		.byte	0x5
+ 554 0285 4403     		.2byte	0x344
+ 555 0287 13       		.uleb128 0x13
+ 556 0288 38000000 		.4byte	.LASF25
+ 557 028c 38000000 		.4byte	.LASF25
+ 558 0290 04       		.byte	0x4
+ 559 0291 18       		.byte	0x18
+ 560 0292 13       		.uleb128 0x13
+ 561 0293 D8000000 		.4byte	.LASF26
+ 562 0297 D8000000 		.4byte	.LASF26
+ 563 029b 06       		.byte	0x6
+ 564 029c 72       		.byte	0x72
+ 565 029d 14       		.uleb128 0x14
+ 566 029e 25000000 		.4byte	.LASF27
+ 567 02a2 25000000 		.4byte	.LASF27
+ 568 02a6 05       		.byte	0x5
+ 569 02a7 2A03     		.2byte	0x32a
+ 570 02a9 13       		.uleb128 0x13
+ 571 02aa F0010000 		.4byte	.LASF28
+ 572 02ae F0010000 		.4byte	.LASF28
+ 573 02b2 07       		.byte	0x7
+ 574 02b3 BB       		.byte	0xbb
+ 575 02b4 00       		.byte	0
+ 576              		.section	.debug_abbrev,"",%progbits
+ 577              	.Ldebug_abbrev0:
+ 578 0000 01       		.uleb128 0x1
+ 579 0001 11       		.uleb128 0x11
+ 580 0002 01       		.byte	0x1
+ 581 0003 25       		.uleb128 0x25
+ 582 0004 0E       		.uleb128 0xe
+ 583 0005 13       		.uleb128 0x13
+ 584 0006 0B       		.uleb128 0xb
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 15
+
+
+ 585 0007 03       		.uleb128 0x3
+ 586 0008 0E       		.uleb128 0xe
+ 587 0009 1B       		.uleb128 0x1b
+ 588 000a 0E       		.uleb128 0xe
+ 589 000b 55       		.uleb128 0x55
+ 590 000c 17       		.uleb128 0x17
+ 591 000d 11       		.uleb128 0x11
+ 592 000e 01       		.uleb128 0x1
+ 593 000f 10       		.uleb128 0x10
+ 594 0010 17       		.uleb128 0x17
+ 595 0011 00       		.byte	0
+ 596 0012 00       		.byte	0
+ 597 0013 02       		.uleb128 0x2
+ 598 0014 24       		.uleb128 0x24
+ 599 0015 00       		.byte	0
+ 600 0016 0B       		.uleb128 0xb
+ 601 0017 0B       		.uleb128 0xb
+ 602 0018 3E       		.uleb128 0x3e
+ 603 0019 0B       		.uleb128 0xb
+ 604 001a 03       		.uleb128 0x3
+ 605 001b 0E       		.uleb128 0xe
+ 606 001c 00       		.byte	0
+ 607 001d 00       		.byte	0
+ 608 001e 03       		.uleb128 0x3
+ 609 001f 24       		.uleb128 0x24
+ 610 0020 00       		.byte	0
+ 611 0021 0B       		.uleb128 0xb
+ 612 0022 0B       		.uleb128 0xb
+ 613 0023 3E       		.uleb128 0x3e
+ 614 0024 0B       		.uleb128 0xb
+ 615 0025 03       		.uleb128 0x3
+ 616 0026 08       		.uleb128 0x8
+ 617 0027 00       		.byte	0
+ 618 0028 00       		.byte	0
+ 619 0029 04       		.uleb128 0x4
+ 620 002a 16       		.uleb128 0x16
+ 621 002b 00       		.byte	0
+ 622 002c 03       		.uleb128 0x3
+ 623 002d 0E       		.uleb128 0xe
+ 624 002e 3A       		.uleb128 0x3a
+ 625 002f 0B       		.uleb128 0xb
+ 626 0030 3B       		.uleb128 0x3b
+ 627 0031 05       		.uleb128 0x5
+ 628 0032 49       		.uleb128 0x49
+ 629 0033 13       		.uleb128 0x13
+ 630 0034 00       		.byte	0
+ 631 0035 00       		.byte	0
+ 632 0036 05       		.uleb128 0x5
+ 633 0037 0F       		.uleb128 0xf
+ 634 0038 00       		.byte	0
+ 635 0039 0B       		.uleb128 0xb
+ 636 003a 0B       		.uleb128 0xb
+ 637 003b 49       		.uleb128 0x49
+ 638 003c 13       		.uleb128 0x13
+ 639 003d 00       		.byte	0
+ 640 003e 00       		.byte	0
+ 641 003f 06       		.uleb128 0x6
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 16
+
+
+ 642 0040 2E       		.uleb128 0x2e
+ 643 0041 01       		.byte	0x1
+ 644 0042 3F       		.uleb128 0x3f
+ 645 0043 19       		.uleb128 0x19
+ 646 0044 03       		.uleb128 0x3
+ 647 0045 0E       		.uleb128 0xe
+ 648 0046 3A       		.uleb128 0x3a
+ 649 0047 0B       		.uleb128 0xb
+ 650 0048 3B       		.uleb128 0x3b
+ 651 0049 0B       		.uleb128 0xb
+ 652 004a 27       		.uleb128 0x27
+ 653 004b 19       		.uleb128 0x19
+ 654 004c 11       		.uleb128 0x11
+ 655 004d 01       		.uleb128 0x1
+ 656 004e 12       		.uleb128 0x12
+ 657 004f 06       		.uleb128 0x6
+ 658 0050 40       		.uleb128 0x40
+ 659 0051 18       		.uleb128 0x18
+ 660 0052 9742     		.uleb128 0x2117
+ 661 0054 19       		.uleb128 0x19
+ 662 0055 01       		.uleb128 0x1
+ 663 0056 13       		.uleb128 0x13
+ 664 0057 00       		.byte	0
+ 665 0058 00       		.byte	0
+ 666 0059 07       		.uleb128 0x7
+ 667 005a 898201   		.uleb128 0x4109
+ 668 005d 00       		.byte	0
+ 669 005e 11       		.uleb128 0x11
+ 670 005f 01       		.uleb128 0x1
+ 671 0060 31       		.uleb128 0x31
+ 672 0061 13       		.uleb128 0x13
+ 673 0062 00       		.byte	0
+ 674 0063 00       		.byte	0
+ 675 0064 08       		.uleb128 0x8
+ 676 0065 2E       		.uleb128 0x2e
+ 677 0066 01       		.byte	0x1
+ 678 0067 3F       		.uleb128 0x3f
+ 679 0068 19       		.uleb128 0x19
+ 680 0069 03       		.uleb128 0x3
+ 681 006a 0E       		.uleb128 0xe
+ 682 006b 3A       		.uleb128 0x3a
+ 683 006c 0B       		.uleb128 0xb
+ 684 006d 3B       		.uleb128 0x3b
+ 685 006e 0B       		.uleb128 0xb
+ 686 006f 27       		.uleb128 0x27
+ 687 0070 19       		.uleb128 0x19
+ 688 0071 49       		.uleb128 0x49
+ 689 0072 13       		.uleb128 0x13
+ 690 0073 11       		.uleb128 0x11
+ 691 0074 01       		.uleb128 0x1
+ 692 0075 12       		.uleb128 0x12
+ 693 0076 06       		.uleb128 0x6
+ 694 0077 40       		.uleb128 0x40
+ 695 0078 18       		.uleb128 0x18
+ 696 0079 9742     		.uleb128 0x2117
+ 697 007b 19       		.uleb128 0x19
+ 698 007c 01       		.uleb128 0x1
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 17
+
+
+ 699 007d 13       		.uleb128 0x13
+ 700 007e 00       		.byte	0
+ 701 007f 00       		.byte	0
+ 702 0080 09       		.uleb128 0x9
+ 703 0081 05       		.uleb128 0x5
+ 704 0082 00       		.byte	0
+ 705 0083 03       		.uleb128 0x3
+ 706 0084 0E       		.uleb128 0xe
+ 707 0085 3A       		.uleb128 0x3a
+ 708 0086 0B       		.uleb128 0xb
+ 709 0087 3B       		.uleb128 0x3b
+ 710 0088 0B       		.uleb128 0xb
+ 711 0089 49       		.uleb128 0x49
+ 712 008a 13       		.uleb128 0x13
+ 713 008b 02       		.uleb128 0x2
+ 714 008c 17       		.uleb128 0x17
+ 715 008d 00       		.byte	0
+ 716 008e 00       		.byte	0
+ 717 008f 0A       		.uleb128 0xa
+ 718 0090 05       		.uleb128 0x5
+ 719 0091 00       		.byte	0
+ 720 0092 03       		.uleb128 0x3
+ 721 0093 08       		.uleb128 0x8
+ 722 0094 3A       		.uleb128 0x3a
+ 723 0095 0B       		.uleb128 0xb
+ 724 0096 3B       		.uleb128 0x3b
+ 725 0097 0B       		.uleb128 0xb
+ 726 0098 49       		.uleb128 0x49
+ 727 0099 13       		.uleb128 0x13
+ 728 009a 02       		.uleb128 0x2
+ 729 009b 17       		.uleb128 0x17
+ 730 009c 00       		.byte	0
+ 731 009d 00       		.byte	0
+ 732 009e 0B       		.uleb128 0xb
+ 733 009f 34       		.uleb128 0x34
+ 734 00a0 00       		.byte	0
+ 735 00a1 03       		.uleb128 0x3
+ 736 00a2 08       		.uleb128 0x8
+ 737 00a3 3A       		.uleb128 0x3a
+ 738 00a4 0B       		.uleb128 0xb
+ 739 00a5 3B       		.uleb128 0x3b
+ 740 00a6 0B       		.uleb128 0xb
+ 741 00a7 49       		.uleb128 0x49
+ 742 00a8 13       		.uleb128 0x13
+ 743 00a9 02       		.uleb128 0x2
+ 744 00aa 17       		.uleb128 0x17
+ 745 00ab 00       		.byte	0
+ 746 00ac 00       		.byte	0
+ 747 00ad 0C       		.uleb128 0xc
+ 748 00ae 2E       		.uleb128 0x2e
+ 749 00af 01       		.byte	0x1
+ 750 00b0 3F       		.uleb128 0x3f
+ 751 00b1 19       		.uleb128 0x19
+ 752 00b2 03       		.uleb128 0x3
+ 753 00b3 0E       		.uleb128 0xe
+ 754 00b4 3A       		.uleb128 0x3a
+ 755 00b5 0B       		.uleb128 0xb
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 18
+
+
+ 756 00b6 3B       		.uleb128 0x3b
+ 757 00b7 0B       		.uleb128 0xb
+ 758 00b8 27       		.uleb128 0x27
+ 759 00b9 19       		.uleb128 0x19
+ 760 00ba 49       		.uleb128 0x49
+ 761 00bb 13       		.uleb128 0x13
+ 762 00bc 8701     		.uleb128 0x87
+ 763 00be 19       		.uleb128 0x19
+ 764 00bf 11       		.uleb128 0x11
+ 765 00c0 01       		.uleb128 0x1
+ 766 00c1 12       		.uleb128 0x12
+ 767 00c2 06       		.uleb128 0x6
+ 768 00c3 40       		.uleb128 0x40
+ 769 00c4 18       		.uleb128 0x18
+ 770 00c5 9742     		.uleb128 0x2117
+ 771 00c7 19       		.uleb128 0x19
+ 772 00c8 01       		.uleb128 0x1
+ 773 00c9 13       		.uleb128 0x13
+ 774 00ca 00       		.byte	0
+ 775 00cb 00       		.byte	0
+ 776 00cc 0D       		.uleb128 0xd
+ 777 00cd 34       		.uleb128 0x34
+ 778 00ce 00       		.byte	0
+ 779 00cf 03       		.uleb128 0x3
+ 780 00d0 0E       		.uleb128 0xe
+ 781 00d1 3A       		.uleb128 0x3a
+ 782 00d2 0B       		.uleb128 0xb
+ 783 00d3 3B       		.uleb128 0x3b
+ 784 00d4 0B       		.uleb128 0xb
+ 785 00d5 49       		.uleb128 0x49
+ 786 00d6 13       		.uleb128 0x13
+ 787 00d7 1C       		.uleb128 0x1c
+ 788 00d8 0D       		.uleb128 0xd
+ 789 00d9 00       		.byte	0
+ 790 00da 00       		.byte	0
+ 791 00db 0E       		.uleb128 0xe
+ 792 00dc 34       		.uleb128 0x34
+ 793 00dd 00       		.byte	0
+ 794 00de 03       		.uleb128 0x3
+ 795 00df 0E       		.uleb128 0xe
+ 796 00e0 3A       		.uleb128 0x3a
+ 797 00e1 0B       		.uleb128 0xb
+ 798 00e2 3B       		.uleb128 0x3b
+ 799 00e3 0B       		.uleb128 0xb
+ 800 00e4 49       		.uleb128 0x49
+ 801 00e5 13       		.uleb128 0x13
+ 802 00e6 1C       		.uleb128 0x1c
+ 803 00e7 0A       		.uleb128 0xa
+ 804 00e8 00       		.byte	0
+ 805 00e9 00       		.byte	0
+ 806 00ea 0F       		.uleb128 0xf
+ 807 00eb 898201   		.uleb128 0x4109
+ 808 00ee 01       		.byte	0x1
+ 809 00ef 11       		.uleb128 0x11
+ 810 00f0 01       		.uleb128 0x1
+ 811 00f1 31       		.uleb128 0x31
+ 812 00f2 13       		.uleb128 0x13
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 19
+
+
+ 813 00f3 01       		.uleb128 0x1
+ 814 00f4 13       		.uleb128 0x13
+ 815 00f5 00       		.byte	0
+ 816 00f6 00       		.byte	0
+ 817 00f7 10       		.uleb128 0x10
+ 818 00f8 8A8201   		.uleb128 0x410a
+ 819 00fb 00       		.byte	0
+ 820 00fc 02       		.uleb128 0x2
+ 821 00fd 18       		.uleb128 0x18
+ 822 00fe 9142     		.uleb128 0x2111
+ 823 0100 18       		.uleb128 0x18
+ 824 0101 00       		.byte	0
+ 825 0102 00       		.byte	0
+ 826 0103 11       		.uleb128 0x11
+ 827 0104 898201   		.uleb128 0x4109
+ 828 0107 01       		.byte	0x1
+ 829 0108 11       		.uleb128 0x11
+ 830 0109 01       		.uleb128 0x1
+ 831 010a 31       		.uleb128 0x31
+ 832 010b 13       		.uleb128 0x13
+ 833 010c 00       		.byte	0
+ 834 010d 00       		.byte	0
+ 835 010e 12       		.uleb128 0x12
+ 836 010f 34       		.uleb128 0x34
+ 837 0110 00       		.byte	0
+ 838 0111 03       		.uleb128 0x3
+ 839 0112 0E       		.uleb128 0xe
+ 840 0113 3A       		.uleb128 0x3a
+ 841 0114 0B       		.uleb128 0xb
+ 842 0115 3B       		.uleb128 0x3b
+ 843 0116 0B       		.uleb128 0xb
+ 844 0117 49       		.uleb128 0x49
+ 845 0118 13       		.uleb128 0x13
+ 846 0119 3F       		.uleb128 0x3f
+ 847 011a 19       		.uleb128 0x19
+ 848 011b 02       		.uleb128 0x2
+ 849 011c 18       		.uleb128 0x18
+ 850 011d 00       		.byte	0
+ 851 011e 00       		.byte	0
+ 852 011f 13       		.uleb128 0x13
+ 853 0120 2E       		.uleb128 0x2e
+ 854 0121 00       		.byte	0
+ 855 0122 3F       		.uleb128 0x3f
+ 856 0123 19       		.uleb128 0x19
+ 857 0124 3C       		.uleb128 0x3c
+ 858 0125 19       		.uleb128 0x19
+ 859 0126 6E       		.uleb128 0x6e
+ 860 0127 0E       		.uleb128 0xe
+ 861 0128 03       		.uleb128 0x3
+ 862 0129 0E       		.uleb128 0xe
+ 863 012a 3A       		.uleb128 0x3a
+ 864 012b 0B       		.uleb128 0xb
+ 865 012c 3B       		.uleb128 0x3b
+ 866 012d 0B       		.uleb128 0xb
+ 867 012e 00       		.byte	0
+ 868 012f 00       		.byte	0
+ 869 0130 14       		.uleb128 0x14
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 20
+
+
+ 870 0131 2E       		.uleb128 0x2e
+ 871 0132 00       		.byte	0
+ 872 0133 3F       		.uleb128 0x3f
+ 873 0134 19       		.uleb128 0x19
+ 874 0135 3C       		.uleb128 0x3c
+ 875 0136 19       		.uleb128 0x19
+ 876 0137 6E       		.uleb128 0x6e
+ 877 0138 0E       		.uleb128 0xe
+ 878 0139 03       		.uleb128 0x3
+ 879 013a 0E       		.uleb128 0xe
+ 880 013b 3A       		.uleb128 0x3a
+ 881 013c 0B       		.uleb128 0xb
+ 882 013d 3B       		.uleb128 0x3b
+ 883 013e 05       		.uleb128 0x5
+ 884 013f 00       		.byte	0
+ 885 0140 00       		.byte	0
+ 886 0141 00       		.byte	0
+ 887              		.section	.debug_loc,"",%progbits
+ 888              	.Ldebug_loc0:
+ 889              	.LLST0:
+ 890 0000 00000000 		.4byte	.LVL2
+ 891 0004 08000000 		.4byte	.LVL4
+ 892 0008 0100     		.2byte	0x1
+ 893 000a 50       		.byte	0x50
+ 894 000b 08000000 		.4byte	.LVL4
+ 895 000f 1C000000 		.4byte	.LFE33
+ 896 0013 0400     		.2byte	0x4
+ 897 0015 F3       		.byte	0xf3
+ 898 0016 01       		.uleb128 0x1
+ 899 0017 50       		.byte	0x50
+ 900 0018 9F       		.byte	0x9f
+ 901 0019 00000000 		.4byte	0
+ 902 001d 00000000 		.4byte	0
+ 903              	.LLST1:
+ 904 0021 00000000 		.4byte	.LVL2
+ 905 0025 0A000000 		.4byte	.LVL5
+ 906 0029 0100     		.2byte	0x1
+ 907 002b 51       		.byte	0x51
+ 908 002c 0A000000 		.4byte	.LVL5
+ 909 0030 14000000 		.4byte	.LVL8
+ 910 0034 0100     		.2byte	0x1
+ 911 0036 55       		.byte	0x55
+ 912 0037 14000000 		.4byte	.LVL8
+ 913 003b 1C000000 		.4byte	.LFE33
+ 914 003f 0100     		.2byte	0x1
+ 915 0041 51       		.byte	0x51
+ 916 0042 00000000 		.4byte	0
+ 917 0046 00000000 		.4byte	0
+ 918              	.LLST2:
+ 919 004a 00000000 		.4byte	.LVL2
+ 920 004e 08000000 		.4byte	.LVL4
+ 921 0052 0100     		.2byte	0x1
+ 922 0054 52       		.byte	0x52
+ 923 0055 08000000 		.4byte	.LVL4
+ 924 0059 1A000000 		.4byte	.LVL10
+ 925 005d 0100     		.2byte	0x1
+ 926 005f 56       		.byte	0x56
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 21
+
+
+ 927 0060 1A000000 		.4byte	.LVL10
+ 928 0064 1C000000 		.4byte	.LFE33
+ 929 0068 0100     		.2byte	0x1
+ 930 006a 50       		.byte	0x50
+ 931 006b 00000000 		.4byte	0
+ 932 006f 00000000 		.4byte	0
+ 933              	.LLST3:
+ 934 0073 04000000 		.4byte	.LVL3
+ 935 0077 08000000 		.4byte	.LVL4
+ 936 007b 0200     		.2byte	0x2
+ 937 007d 30       		.byte	0x30
+ 938 007e 9F       		.byte	0x9f
+ 939 007f 08000000 		.4byte	.LVL4
+ 940 0083 1A000000 		.4byte	.LVL9
+ 941 0087 0100     		.2byte	0x1
+ 942 0089 54       		.byte	0x54
+ 943 008a 00000000 		.4byte	0
+ 944 008e 00000000 		.4byte	0
+ 945              		.section	.debug_aranges,"",%progbits
+ 946 0000 2C000000 		.4byte	0x2c
+ 947 0004 0200     		.2byte	0x2
+ 948 0006 00000000 		.4byte	.Ldebug_info0
+ 949 000a 04       		.byte	0x4
+ 950 000b 00       		.byte	0
+ 951 000c 0000     		.2byte	0
+ 952 000e 0000     		.2byte	0
+ 953 0010 00000000 		.4byte	.LFB34
+ 954 0014 1C000000 		.4byte	.LFE34-.LFB34
+ 955 0018 00000000 		.4byte	.LFB33
+ 956 001c 1C000000 		.4byte	.LFE33-.LFB33
+ 957 0020 00000000 		.4byte	.LFB35
+ 958 0024 84000000 		.4byte	.LFE35-.LFB35
+ 959 0028 00000000 		.4byte	0
+ 960 002c 00000000 		.4byte	0
+ 961              		.section	.debug_ranges,"",%progbits
+ 962              	.Ldebug_ranges0:
+ 963 0000 00000000 		.4byte	.LFB34
+ 964 0004 1C000000 		.4byte	.LFE34
+ 965 0008 00000000 		.4byte	.LFB33
+ 966 000c 1C000000 		.4byte	.LFE33
+ 967 0010 00000000 		.4byte	.LFB35
+ 968 0014 84000000 		.4byte	.LFE35
+ 969 0018 00000000 		.4byte	0
+ 970 001c 00000000 		.4byte	0
+ 971              		.section	.debug_line,"",%progbits
+ 972              	.Ldebug_line0:
+ 973 0000 53010000 		.section	.debug_str,"MS",%progbits,1
+ 973      0200F500 
+ 973      00000201 
+ 973      FB0E0D00 
+ 973      01010101 
+ 974              	.LASF12:
+ 975 0000 666C6F61 		.ascii	"float\000"
+ 975      7400
+ 976              	.LASF24:
+ 977 0006 55415254 		.ascii	"UART_SpiUartWriteTxData\000"
+ 977      5F537069 
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 22
+
+
+ 977      55617274 
+ 977      57726974 
+ 977      65547844 
+ 978              	.LASF13:
+ 979 001e 646F7562 		.ascii	"double\000"
+ 979      6C6500
+ 980              	.LASF27:
+ 981 0025 55415254 		.ascii	"UART_UartPutString\000"
+ 981      5F556172 
+ 981      74507574 
+ 981      53747269 
+ 981      6E6700
+ 982              	.LASF25:
+ 983 0038 496E7075 		.ascii	"InputInterrupt_StartEx\000"
+ 983      74496E74 
+ 983      65727275 
+ 983      70745F53 
+ 983      74617274 
+ 984              	.LASF17:
+ 985 004f 66696C65 		.ascii	"file\000"
+ 985      00
+ 986              	.LASF1:
+ 987 0054 756E7369 		.ascii	"unsigned char\000"
+ 987      676E6564 
+ 987      20636861 
+ 987      7200
+ 988              	.LASF31:
+ 989 0062 433A5C55 		.ascii	"C:\\Users\\okuntso\\Documents\\PSoC Creator\\Diplom"
+ 989      73657273 
+ 989      5C6F6B75 
+ 989      6E74736F 
+ 989      5C446F63 
+ 990 0090 615C4345 		.ascii	"a\\CE224431_PSoC4_UART_printf02.cydsn\000"
+ 990      32323434 
+ 990      33315F50 
+ 990      536F4334 
+ 990      5F554152 
+ 991              	.LASF32:
+ 992 00b5 4953525F 		.ascii	"ISR_SWITCH\000"
+ 992      53574954 
+ 992      434800
+ 993              	.LASF5:
+ 994 00c0 6C6F6E67 		.ascii	"long unsigned int\000"
+ 994      20756E73 
+ 994      69676E65 
+ 994      6420696E 
+ 994      7400
+ 995              	.LASF11:
+ 996 00d2 696E7433 		.ascii	"int32\000"
+ 996      3200
+ 997              	.LASF26:
+ 998 00d8 55415254 		.ascii	"UART_Start\000"
+ 998      5F537461 
+ 998      727400
+ 999              	.LASF22:
+ 1000 00e3 73776974 		.ascii	"switch_pin_ClearInterrupt\000"
+ 1000      63685F70 
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 23
+
+
+ 1000      696E5F43 
+ 1000      6C656172 
+ 1000      496E7465 
+ 1001              	.LASF18:
+ 1002 00fd 696E7465 		.ascii	"integerNum\000"
+ 1002      6765724E 
+ 1002      756D00
+ 1003              	.LASF34:
+ 1004 0108 6D61696E 		.ascii	"main\000"
+ 1004      00
+ 1005              	.LASF10:
+ 1006 010d 75696E74 		.ascii	"uint32\000"
+ 1006      333200
+ 1007              	.LASF8:
+ 1008 0114 756E7369 		.ascii	"unsigned int\000"
+ 1008      676E6564 
+ 1008      20696E74 
+ 1008      00
+ 1009              	.LASF7:
+ 1010 0121 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1010      206C6F6E 
+ 1010      6720756E 
+ 1010      7369676E 
+ 1010      65642069 
+ 1011              	.LASF29:
+ 1012 0138 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1012      43313120 
+ 1012      352E342E 
+ 1012      31203230 
+ 1012      31363036 
+ 1013 016b 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
+ 1013      20726576 
+ 1013      6973696F 
+ 1013      6E203233 
+ 1013      37373135 
+ 1014 019e 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1014      66756E63 
+ 1014      74696F6E 
+ 1014      2D736563 
+ 1014      74696F6E 
+ 1015              	.LASF33:
+ 1016 01c6 5F777269 		.ascii	"_write\000"
+ 1016      746500
+ 1017              	.LASF16:
+ 1018 01cd 73697A65 		.ascii	"sizetype\000"
+ 1018      74797065 
+ 1018      00
+ 1019              	.LASF6:
+ 1020 01d6 6C6F6E67 		.ascii	"long long int\000"
+ 1020      206C6F6E 
+ 1020      6720696E 
+ 1020      7400
+ 1021              	.LASF30:
+ 1022 01e4 6D61696E 		.ascii	"main.c\000"
+ 1022      2E6300
+ 1023              	.LASF14:
+ 1024 01eb 63686172 		.ascii	"char\000"
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\ccYKBjbx.s 			page 24
+
+
+ 1024      00
+ 1025              	.LASF28:
+ 1026 01f0 7072696E 		.ascii	"printf\000"
+ 1026      746600
+ 1027              	.LASF19:
+ 1028 01f7 666C6F61 		.ascii	"floatNum\000"
+ 1028      744E756D 
+ 1028      00
+ 1029              	.LASF2:
+ 1030 0200 73686F72 		.ascii	"short int\000"
+ 1030      7420696E 
+ 1030      7400
+ 1031              	.LASF20:
+ 1032 020a 70726573 		.ascii	"pressCount\000"
+ 1032      73436F75 
+ 1032      6E7400
+ 1033              	.LASF9:
+ 1034 0215 75696E74 		.ascii	"uint8\000"
+ 1034      3800
+ 1035              	.LASF23:
+ 1036 021b 496E7075 		.ascii	"InputInterrupt_ClearPending\000"
+ 1036      74496E74 
+ 1036      65727275 
+ 1036      70745F43 
+ 1036      6C656172 
+ 1037              	.LASF4:
+ 1038 0237 6C6F6E67 		.ascii	"long int\000"
+ 1038      20696E74 
+ 1038      00
+ 1039              	.LASF15:
+ 1040 0240 6C6F6E67 		.ascii	"long double\000"
+ 1040      20646F75 
+ 1040      626C6500 
+ 1041              	.LASF0:
+ 1042 024c 7369676E 		.ascii	"signed char\000"
+ 1042      65642063 
+ 1042      68617200 
+ 1043              	.LASF3:
+ 1044 0258 73686F72 		.ascii	"short unsigned int\000"
+ 1044      7420756E 
+ 1044      7369676E 
+ 1044      65642069 
+ 1044      6E7400
+ 1045              	.LASF21:
+ 1046 026b 7072696E 		.ascii	"printStatus\000"
+ 1046      74537461 
+ 1046      74757300 
+ 1047              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

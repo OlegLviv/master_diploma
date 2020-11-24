@@ -1,0 +1,9 @@
+C:\Users\okuntso\Documents\PSoC Creator\Diploma\Design01.cydsn\Design01.cyprj|861474ca-e9fa-4462-a38c-ff2a6b69a370
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|81fbc711-a4c2-4bb7-96c9-61bed5595a55
+C:\Users\okuntso\Documents\PSoC Creator\4.3\Downloads ( 4.3).cylib\Downloads ( 4.3).cyprj|7f5e6119-31d3-4395-ab92-4bf74be62675
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|762356b8-f5eb-468d-b5ab-a56f3aeb5e44
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|2626ed10-2dcc-4a69-b240-51bf0ec88b70
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|bf5650f4-fb12-4c96-8d09-3802db5e0a7b
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\dev\psoc4\PSoC4AnalogDevice\psoc4arch.cydsn\psoc4arch.cyprj|f5e69f42-1112-4ec5-8715-50e6c3167bc2
+C:\Users\okuntso\Documents\PSoC Creator\Diploma\CE224431_PSoC4_UART_printf01.cydsn\CE224431_PSoC4_UART_printf01.cyprj|d140b3bc-6c96-4ee8-a473-9137bc7ba59f
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|cfafc82e-6c00-4203-bcc0-c7d070a9a9d7

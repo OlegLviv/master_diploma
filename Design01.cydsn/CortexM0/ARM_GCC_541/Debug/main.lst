@@ -1,0 +1,2876 @@
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m0
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 0
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.syntax unified
+  15              		.file	"main.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.syntax divided
+  20              		.global _printf_float
+  21              		.thumb
+  22              		.syntax unified
+  23              		.section	.text._write,"ax",%progbits
+  24              		.align	2
+  25              		.global	_write
+  26              		.code	16
+  27              		.thumb_func
+  28              		.type	_write, %function
+  29              	_write:
+  30              	.LFB59:
+  31              		.file 1 "main.c"
+   1:main.c        **** #include <project.h>
+   2:main.c        **** #include <stdio.h>
+   3:main.c        **** /* Order of Digital Filter */
+   4:main.c        **** #define DF_ORDER (2)
+   5:main.c        **** 
+   6:main.c        **** /* RTC config */
+   7:main.c        **** /* Time: 02:59:50 */
+   8:main.c        **** #define TIME_HOUR           (0x02u)
+   9:main.c        **** #define TIME_MIN            (0x59u)
+  10:main.c        **** #define TIME_SEC            (0x50u)
+  11:main.c        **** #define TIME_HR_MIN_SEC     ((uint32)(TIME_HOUR << RTC_HOURS_OFFSET) | \
+  12:main.c        ****                             (uint32)(TIME_MIN << RTC_MINUTES_OFFSET)    | \
+  13:main.c        ****                              TIME_SEC)
+  14:main.c        **** /* Date: 03/22/2014 */
+  15:main.c        **** #define DATE_MONTH          (RTC_MARCH)
+  16:main.c        **** #define DATE_DAY            (0x22u)
+  17:main.c        **** #define DATE_YEAR           (0x2014u)
+  18:main.c        **** #define DATE_MONTH_DAY_YEAR ((uint32)(DATE_MONTH << RTC_MONTH_OFFSET)   | \
+  19:main.c        ****                             (uint32)(DATE_DAY << RTC_DAY_OFFSET)        | \
+  20:main.c        ****                              DATE_YEAR)
+  21:main.c        **** 
+  22:main.c        **** #define SYSTICK_EACH_10_HZ  (10u)
+  23:main.c        **** #define SYSTICK_RELOAD      (CYDEV_BCLK__SYSCLK__HZ / SYSTICK_EACH_10_HZ)
+  24:main.c        **** 
+  25:main.c        **** /* Digital Filter Denumerator coefficients */
+  26:main.c        **** float DigitalFilter_ACoefs[DF_ORDER + 1] = {1.0000, -1.1429, 0.4128};
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 2
+
+
+  27:main.c        **** /* Digital Filter Numerator coefficients */
+  28:main.c        **** float DigitalFilter_BCoefs[DF_ORDER + 1] = {0.0674, 0.1349, 0.0674};
+  29:main.c        **** /* Digital Filter internal buffer */
+  30:main.c        **** float DigitalFilter_Buffer[DF_ORDER + 1];
+  31:main.c        **** 
+  32:main.c        **** int16 result = 0;
+  33:main.c        **** float DigitalFilter_ProcessOneSample(float NewSample);
+  34:main.c        **** void print_time();
+  35:main.c        **** uint32 time;
+  36:main.c        **** uint32 cnt = 0;
+  37:main.c        **** 
+  38:main.c        **** #if defined (__GNUC__) 
+  39:main.c        ****     
+  40:main.c        ****     /* Add an explicit reference to the floating point printf library to allow 
+  41:main.c        ****        use of floating point conversion specifier. */     
+  42:main.c        ****     asm (".global _printf_float"); 
+  43:main.c        ****  
+  44:main.c        ****     /* For GCC compiler revise _write() function for printf functionality */     
+  45:main.c        **** 	int _write(int file, char *ptr, int len) 
+  46:main.c        ****     {       
+  32              		.loc 1 46 0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36              	.LVL0:
+  37 0000 70B5     		push	{r4, r5, r6, lr}
+  38              		.cfi_def_cfa_offset 16
+  39              		.cfi_offset 4, -16
+  40              		.cfi_offset 5, -12
+  41              		.cfi_offset 6, -8
+  42              		.cfi_offset 14, -4
+  43 0002 1600     		movs	r6, r2
+  44              	.LVL1:
+  47:main.c        ****         /* Warning suppression for unused function parameter */
+  48:main.c        **** 		file = file;
+  49:main.c        **** 		
+  50:main.c        **** 		int i; 
+  51:main.c        ****         /* Character is sent via UART */
+  52:main.c        ****         for (i = 0; i < len; i++) 
+  45              		.loc 1 52 0
+  46 0004 0024     		movs	r4, #0
+  47 0006 05E0     		b	.L2
+  48              	.LVL2:
+  49              	.L3:
+  53:main.c        ****         { 
+  54:main.c        ****             D_UART_UartPutChar(*(ptr++)); 
+  50              		.loc 1 54 0 discriminator 3
+  51 0008 4D1C     		adds	r5, r1, #1
+  52              	.LVL3:
+  53 000a 0878     		ldrb	r0, [r1]
+  54 000c FFF7FEFF 		bl	D_UART_SpiUartWriteTxData
+  55              	.LVL4:
+  52:main.c        ****         { 
+  56              		.loc 1 52 0 discriminator 3
+  57 0010 0134     		adds	r4, r4, #1
+  58              	.LVL5:
+  59              		.loc 1 54 0 discriminator 3
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 3
+
+
+  60 0012 2900     		movs	r1, r5
+  61              	.LVL6:
+  62              	.L2:
+  52:main.c        ****         { 
+  63              		.loc 1 52 0 discriminator 1
+  64 0014 B442     		cmp	r4, r6
+  65 0016 F7DB     		blt	.L3
+  55:main.c        ****         }          
+  56:main.c        ****         return(len); 
+  57:main.c        ****     } 
+  66              		.loc 1 57 0
+  67 0018 3000     		movs	r0, r6
+  68              		@ sp needed
+  69              	.LVL7:
+  70              	.LVL8:
+  71 001a 70BD     		pop	{r4, r5, r6, pc}
+  72              		.cfi_endproc
+  73              	.LFE59:
+  74              		.size	_write, .-_write
+  75              		.global	__aeabi_fmul
+  76              		.global	__aeabi_fsub
+  77              		.global	__aeabi_fadd
+  78              		.section	.text.DigitalFilter_ProcessOneSample,"ax",%progbits
+  79              		.align	2
+  80              		.global	DigitalFilter_ProcessOneSample
+  81              		.code	16
+  82              		.thumb_func
+  83              		.type	DigitalFilter_ProcessOneSample, %function
+  84              	DigitalFilter_ProcessOneSample:
+  85              	.LFB62:
+  58:main.c        **** #endif /* (__GNUC__) */
+  59:main.c        **** 
+  60:main.c        **** CY_ISR( MyADC )
+  61:main.c        **** {
+  62:main.c        ****     cnt++;
+  63:main.c        ****     uint32 intr_status;
+  64:main.c        ****     /* Read interrupt status register */
+  65:main.c        ****     intr_status = ADC_SAR_INTR_REG;
+  66:main.c        **** 
+  67:main.c        ****     /* `#START MAIN_ADC_ISR` */
+  68:main.c        ****     result = ADC_GetResult16(0);
+  69:main.c        ****     //printf("adc measure = %d\r\n", result);
+  70:main.c        ****     float accumulator = DigitalFilter_ProcessOneSample(result);
+  71:main.c        ****     //printf("accum measure = %f\r\n", accumulator);
+  72:main.c        ****     IDAC_SetValue(result);
+  73:main.c        ****     /* Clear handled interrupt */
+  74:main.c        ****     ADC_SAR_INTR_REG = intr_status;
+  75:main.c        **** }
+  76:main.c        **** 
+  77:main.c        **** 
+  78:main.c        **** int main(void)
+  79:main.c        **** {
+  80:main.c        **** 
+  81:main.c        ****     D_UART_Start();
+  82:main.c        ****     
+  83:main.c        ****     isr_adc_StartEx(MyADC);
+  84:main.c        ****     
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 4
+
+
+  85:main.c        ****     ADC_Timer_Start();
+  86:main.c        ****     ADC_Enable();
+  87:main.c        ****     ADC_Init();
+  88:main.c        ****     ADC_Start(); /* Initialize ADC */
+  89:main.c        ****     ADC_IRQ_Enable(); /* Enable ADC interrupts */
+  90:main.c        ****     ADC_StartConvert(); /* Start ADC conversions */
+  91:main.c        ****     IDAC_Start();
+  92:main.c        ****     
+  93:main.c        ****     printf("Debug info start...\r\n");
+  94:main.c        ****     
+  95:main.c        ****     /* Starts SysTick component */
+  96:main.c        ****     //CySysTickStart();
+  97:main.c        **** 
+  98:main.c        ****     /* Starts RTC component */
+  99:main.c        ****     RTC_Start();
+ 100:main.c        **** 
+ 101:main.c        ****     /* Set Date and Time */
+ 102:main.c        ****     RTC_SetDateAndTime(TIME_HR_MIN_SEC,DATE_MONTH_DAY_YEAR);
+ 103:main.c        **** 
+ 104:main.c        ****     /* Set RTC time update period */
+ 105:main.c        ****     //RTC_SetPeriod(1u, SYSTICK_EACH_10_HZ);
+ 106:main.c        **** 
+ 107:main.c        ****     /* Enable global interrupts */
+ 108:main.c        ****     CyGlobalIntEnable;
+ 109:main.c        ****     print_time();
+ 110:main.c        ****     for(;;){
+ 111:main.c        ****         if (cnt==1000)
+ 112:main.c        ****         {
+ 113:main.c        ****             print_time();
+ 114:main.c        ****         }
+ 115:main.c        ****     }
+ 116:main.c        **** }
+ 117:main.c        **** 
+ 118:main.c        **** /***************************************************************
+ 119:main.c        **** * \fn DigitalFilter_ProcessOneSample
+ 120:main.c        **** *  
+ 121:main.c        **** * This function to process one sample in digital filter.
+ 122:main.c        **** * Note: One sample processing at DF_ORDER = 7 and CPU frequency 
+ 123:main.c        **** *       24 MHz takes about 160 us 
+ 124:main.c        **** *
+ 125:main.c        **** * \param NewSample
+ 126:main.c        **** *  Sample value to be processed
+ 127:main.c        **** *
+ 128:main.c        **** * \return 
+ 129:main.c        **** *  Digital filter output sample
+ 130:main.c        **** ****************************************************************/
+ 131:main.c        **** float DigitalFilter_ProcessOneSample(float NewSample)
+ 132:main.c        **** {
+  86              		.loc 1 132 0
+  87              		.cfi_startproc
+  88              		@ args = 0, pretend = 0, frame = 0
+  89              		@ frame_needed = 0, uses_anonymous_args = 0
+  90              	.LVL9:
+  91 0000 70B5     		push	{r4, r5, r6, lr}
+  92              		.cfi_def_cfa_offset 16
+  93              		.cfi_offset 4, -16
+  94              		.cfi_offset 5, -12
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 5
+
+
+  95              		.cfi_offset 6, -8
+  96              		.cfi_offset 14, -4
+  97 0002 061C     		adds	r6, r0, #0
+  98              	.LVL10:
+ 133:main.c        ****     uint32 idx; 
+ 134:main.c        ****     float  Accumulator;
+ 135:main.c        ****     /* Shift the old values in the internal buffer DF_Buffer */
+ 136:main.c        ****     for (idx = DF_ORDER; idx > 0; idx--)
+  99              		.loc 1 136 0
+ 100 0004 0224     		movs	r4, #2
+ 101 0006 06E0     		b	.L5
+ 102              	.LVL11:
+ 103              	.L6:
+ 137:main.c        ****     {
+ 138:main.c        ****         DigitalFilter_Buffer[idx] = DigitalFilter_Buffer[idx - 1];
+ 104              		.loc 1 138 0 discriminator 3
+ 105 0008 631E     		subs	r3, r4, #1
+ 106 000a 174A     		ldr	r2, .L11
+ 107 000c 9900     		lsls	r1, r3, #2
+ 108 000e 8958     		ldr	r1, [r1, r2]
+ 109 0010 A400     		lsls	r4, r4, #2
+ 110              	.LVL12:
+ 111 0012 A150     		str	r1, [r4, r2]
+ 112              	.LVL13:
+ 136:main.c        ****     {
+ 113              		.loc 1 136 0 discriminator 3
+ 114 0014 1C00     		movs	r4, r3
+ 115              	.LVL14:
+ 116              	.L5:
+ 136:main.c        ****     {
+ 117              		.loc 1 136 0 is_stmt 0 discriminator 1
+ 118 0016 002C     		cmp	r4, #0
+ 119 0018 F6D1     		bne	.L6
+ 120 001a 0125     		movs	r5, #1
+ 121 001c 0CE0     		b	.L7
+ 122              	.LVL15:
+ 123              	.L8:
+ 139:main.c        ****     }    
+ 140:main.c        ****     /* Sum in Denumerator */
+ 141:main.c        ****     Accumulator = NewSample;
+ 142:main.c        ****     for (idx = 1; idx <= DF_ORDER; idx++)
+ 143:main.c        ****     {
+ 144:main.c        ****         Accumulator = Accumulator - DigitalFilter_ACoefs[idx] * DigitalFilter_Buffer[idx];
+ 124              		.loc 1 144 0 is_stmt 1 discriminator 3
+ 125 001e AB00     		lsls	r3, r5, #2
+ 126 0020 124A     		ldr	r2, .L11+4
+ 127 0022 9858     		ldr	r0, [r3, r2]
+ 128 0024 104A     		ldr	r2, .L11
+ 129 0026 9958     		ldr	r1, [r3, r2]
+ 130 0028 FFF7FEFF 		bl	__aeabi_fmul
+ 131              	.LVL16:
+ 132 002c 011C     		adds	r1, r0, #0
+ 133 002e 301C     		adds	r0, r6, #0
+ 134 0030 FFF7FEFF 		bl	__aeabi_fsub
+ 135              	.LVL17:
+ 136 0034 061C     		adds	r6, r0, #0
+ 137              	.LVL18:
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 6
+
+
+ 142:main.c        ****     {
+ 138              		.loc 1 142 0 discriminator 3
+ 139 0036 0135     		adds	r5, r5, #1
+ 140              	.LVL19:
+ 141              	.L7:
+ 142:main.c        ****     {
+ 142              		.loc 1 142 0 is_stmt 0 discriminator 1
+ 143 0038 022D     		cmp	r5, #2
+ 144 003a F0D9     		bls	.L8
+ 145:main.c        ****     }
+ 146:main.c        ****     DigitalFilter_Buffer[0] = Accumulator;
+ 145              		.loc 1 146 0 is_stmt 1
+ 146 003c 0A4B     		ldr	r3, .L11
+ 147 003e 1E60     		str	r6, [r3]
+ 148              	.LVL20:
+ 147:main.c        ****     /* Sum in Numerator */
+ 148:main.c        ****     Accumulator = 0;
+ 149              		.loc 1 148 0
+ 150 0040 0025     		movs	r5, #0
+ 149:main.c        ****     for (idx = 0; idx <= DF_ORDER; idx++)
+ 151              		.loc 1 149 0
+ 152 0042 0DE0     		b	.L9
+ 153              	.LVL21:
+ 154              	.L10:
+ 150:main.c        ****     {
+ 151:main.c        ****         Accumulator = Accumulator + DigitalFilter_BCoefs[idx] * DigitalFilter_Buffer[idx];
+ 155              		.loc 1 151 0 discriminator 3
+ 156 0044 A200     		lsls	r2, r4, #2
+ 157 0046 094B     		ldr	r3, .L11+4
+ 158 0048 9B18     		adds	r3, r3, r2
+ 159 004a D868     		ldr	r0, [r3, #12]
+ 160 004c 064B     		ldr	r3, .L11
+ 161 004e D158     		ldr	r1, [r2, r3]
+ 162 0050 FFF7FEFF 		bl	__aeabi_fmul
+ 163              	.LVL22:
+ 164 0054 011C     		adds	r1, r0, #0
+ 165 0056 281C     		adds	r0, r5, #0
+ 166 0058 FFF7FEFF 		bl	__aeabi_fadd
+ 167              	.LVL23:
+ 168 005c 051C     		adds	r5, r0, #0
+ 169              	.LVL24:
+ 149:main.c        ****     for (idx = 0; idx <= DF_ORDER; idx++)
+ 170              		.loc 1 149 0 discriminator 3
+ 171 005e 0134     		adds	r4, r4, #1
+ 172              	.LVL25:
+ 173              	.L9:
+ 149:main.c        ****     for (idx = 0; idx <= DF_ORDER; idx++)
+ 174              		.loc 1 149 0 is_stmt 0 discriminator 1
+ 175 0060 022C     		cmp	r4, #2
+ 176 0062 EFD9     		bls	.L10
+ 152:main.c        ****     }
+ 153:main.c        ****     return (Accumulator);
+ 154:main.c        **** }
+ 177              		.loc 1 154 0 is_stmt 1
+ 178 0064 281C     		adds	r0, r5, #0
+ 179              		@ sp needed
+ 180              	.LVL26:
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 7
+
+
+ 181              	.LVL27:
+ 182 0066 70BD     		pop	{r4, r5, r6, pc}
+ 183              	.L12:
+ 184              		.align	2
+ 185              	.L11:
+ 186 0068 00000000 		.word	DigitalFilter_Buffer
+ 187 006c 00000000 		.word	.LANCHOR0
+ 188              		.cfi_endproc
+ 189              	.LFE62:
+ 190              		.size	DigitalFilter_ProcessOneSample, .-DigitalFilter_ProcessOneSample
+ 191              		.global	__aeabi_i2f
+ 192              		.section	.text.MyADC,"ax",%progbits
+ 193              		.align	2
+ 194              		.global	MyADC
+ 195              		.code	16
+ 196              		.thumb_func
+ 197              		.type	MyADC, %function
+ 198              	MyADC:
+ 199              	.LFB60:
+  61:main.c        ****     cnt++;
+ 200              		.loc 1 61 0
+ 201              		.cfi_startproc
+ 202              		@ args = 0, pretend = 0, frame = 0
+ 203              		@ frame_needed = 0, uses_anonymous_args = 0
+ 204 0000 70B5     		push	{r4, r5, r6, lr}
+ 205              		.cfi_def_cfa_offset 16
+ 206              		.cfi_offset 4, -16
+ 207              		.cfi_offset 5, -12
+ 208              		.cfi_offset 6, -8
+ 209              		.cfi_offset 14, -4
+  62:main.c        ****     uint32 intr_status;
+ 210              		.loc 1 62 0
+ 211 0002 0A4C     		ldr	r4, .L14
+ 212 0004 2368     		ldr	r3, [r4]
+ 213 0006 0133     		adds	r3, r3, #1
+ 214 0008 2360     		str	r3, [r4]
+  65:main.c        **** 
+ 215              		.loc 1 65 0
+ 216 000a 094D     		ldr	r5, .L14+4
+ 217 000c 2E68     		ldr	r6, [r5]
+ 218              	.LVL28:
+  68:main.c        ****     //printf("adc measure = %d\r\n", result);
+ 219              		.loc 1 68 0
+ 220 000e 0020     		movs	r0, #0
+ 221 0010 FFF7FEFF 		bl	ADC_GetResult16
+ 222              	.LVL29:
+ 223 0014 A080     		strh	r0, [r4, #4]
+  70:main.c        ****     //printf("accum measure = %f\r\n", accumulator);
+ 224              		.loc 1 70 0
+ 225 0016 FFF7FEFF 		bl	__aeabi_i2f
+ 226              	.LVL30:
+ 227 001a FFF7FEFF 		bl	DigitalFilter_ProcessOneSample
+ 228              	.LVL31:
+  72:main.c        ****     /* Clear handled interrupt */
+ 229              		.loc 1 72 0
+ 230 001e 0423     		movs	r3, #4
+ 231 0020 E05E     		ldrsh	r0, [r4, r3]
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 8
+
+
+ 232 0022 FFF7FEFF 		bl	IDAC_SetValue
+ 233              	.LVL32:
+  74:main.c        **** }
+ 234              		.loc 1 74 0
+ 235 0026 2E60     		str	r6, [r5]
+  75:main.c        **** 
+ 236              		.loc 1 75 0
+ 237              		@ sp needed
+ 238              	.LVL33:
+ 239 0028 70BD     		pop	{r4, r5, r6, pc}
+ 240              	.L15:
+ 241 002a C046     		.align	2
+ 242              	.L14:
+ 243 002c 00000000 		.word	.LANCHOR1
+ 244 0030 10021A40 		.word	1075446288
+ 245              		.cfi_endproc
+ 246              	.LFE60:
+ 247              		.size	MyADC, .-MyADC
+ 248              		.section	.text.print_time,"ax",%progbits
+ 249              		.align	2
+ 250              		.global	print_time
+ 251              		.code	16
+ 252              		.thumb_func
+ 253              		.type	print_time, %function
+ 254              	print_time:
+ 255              	.LFB63:
+ 155:main.c        **** 
+ 156:main.c        **** void print_time(){
+ 256              		.loc 1 156 0
+ 257              		.cfi_startproc
+ 258              		@ args = 0, pretend = 0, frame = 0
+ 259              		@ frame_needed = 0, uses_anonymous_args = 0
+ 260 0000 10B5     		push	{r4, lr}
+ 261              		.cfi_def_cfa_offset 8
+ 262              		.cfi_offset 4, -8
+ 263              		.cfi_offset 14, -4
+ 157:main.c        ****     RTC_Update();
+ 264              		.loc 1 157 0
+ 265 0002 FFF7FEFF 		bl	RTC_Update
+ 266              	.LVL34:
+ 158:main.c        ****     time = RTC_GetTime();
+ 267              		.loc 1 158 0
+ 268 0006 FFF7FEFF 		bl	RTC_GetTime
+ 269              	.LVL35:
+ 270 000a 0B4B     		ldr	r3, .L17
+ 271 000c 1860     		str	r0, [r3]
+ 272              	.LVL36:
+ 273              	.LBB6:
+ 274              	.LBB7:
+ 275              		.file 2 "Generated_Source\\PSoC4/RTC.h"
+   1:Generated_Source\PSoC4/RTC.h **** /***************************************************************************//**
+   2:Generated_Source\PSoC4/RTC.h **** * \file Name: RTC.h
+   3:Generated_Source\PSoC4/RTC.h **** * \version 1.10
+   4:Generated_Source\PSoC4/RTC.h **** *
+   5:Generated_Source\PSoC4/RTC.h **** * \brief
+   6:Generated_Source\PSoC4/RTC.h **** *  This file provides constants and parameter values for the RTC_P4 Component.
+   7:Generated_Source\PSoC4/RTC.h **** *
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 9
+
+
+   8:Generated_Source\PSoC4/RTC.h **** ********************************************************************************
+   9:Generated_Source\PSoC4/RTC.h **** * Copyright 2015-2016, Cypress Semiconductor Corporation.  All rights reserved.
+  10:Generated_Source\PSoC4/RTC.h **** * You may use this file only in accordance with the license, terms, conditions,
+  11:Generated_Source\PSoC4/RTC.h **** * disclaimers, and limitations in the end user license agreement accompanying
+  12:Generated_Source\PSoC4/RTC.h **** * the software package with which this file was provided.
+  13:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+  14:Generated_Source\PSoC4/RTC.h **** 
+  15:Generated_Source\PSoC4/RTC.h **** #if !defined(CY_RTC_P4_RTC_H)
+  16:Generated_Source\PSoC4/RTC.h **** #define CY_RTC_P4_RTC_H
+  17:Generated_Source\PSoC4/RTC.h **** 
+  18:Generated_Source\PSoC4/RTC.h **** #include <cytypes.h>
+  19:Generated_Source\PSoC4/RTC.h **** #include <CyLib.h>
+  20:Generated_Source\PSoC4/RTC.h **** 
+  21:Generated_Source\PSoC4/RTC.h **** 
+  22:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+  23:Generated_Source\PSoC4/RTC.h **** *    Data types definition
+  24:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+  25:Generated_Source\PSoC4/RTC.h **** 
+  26:Generated_Source\PSoC4/RTC.h **** typedef enum
+  27:Generated_Source\PSoC4/RTC.h **** {
+  28:Generated_Source\PSoC4/RTC.h ****     RTC_DST_DATE_RELATIVE = 0u,
+  29:Generated_Source\PSoC4/RTC.h ****     RTC_DST_DATE_FIXED = 1u
+  30:Generated_Source\PSoC4/RTC.h **** }RTC_DST_DATETYPE_ENUM;
+  31:Generated_Source\PSoC4/RTC.h **** 
+  32:Generated_Source\PSoC4/RTC.h **** /**
+  33:Generated_Source\PSoC4/RTC.h **** * \addtogroup group_structures
+  34:Generated_Source\PSoC4/RTC.h **** * @{
+  35:Generated_Source\PSoC4/RTC.h **** */
+  36:Generated_Source\PSoC4/RTC.h **** 
+  37:Generated_Source\PSoC4/RTC.h **** /**
+  38:Generated_Source\PSoC4/RTC.h **** * This is the data structure that is used to save the current time and date 
+  39:Generated_Source\PSoC4/RTC.h **** * (RTC_currentTimeDate), and Alarm time and date (RTC_alarmCfgTimeDate).
+  40:Generated_Source\PSoC4/RTC.h **** */
+  41:Generated_Source\PSoC4/RTC.h **** typedef struct
+  42:Generated_Source\PSoC4/RTC.h **** {
+  43:Generated_Source\PSoC4/RTC.h ****     uint32 time;
+  44:Generated_Source\PSoC4/RTC.h ****     uint32 date;
+  45:Generated_Source\PSoC4/RTC.h ****     uint32 dayOfWeek;
+  46:Generated_Source\PSoC4/RTC.h ****     uint32 status;
+  47:Generated_Source\PSoC4/RTC.h **** }RTC_DATE_TIME;
+  48:Generated_Source\PSoC4/RTC.h **** 
+  49:Generated_Source\PSoC4/RTC.h **** /**
+  50:Generated_Source\PSoC4/RTC.h **** * This is the data structure that is used to save time and date values for 
+  51:Generated_Source\PSoC4/RTC.h **** * Daylight Savings Time Start and Stop (RTC_dstTimeDateStart and 
+  52:Generated_Source\PSoC4/RTC.h **** * RTC_dstTimeDateStop).
+  53:Generated_Source\PSoC4/RTC.h **** */
+  54:Generated_Source\PSoC4/RTC.h **** typedef struct
+  55:Generated_Source\PSoC4/RTC.h **** {
+  56:Generated_Source\PSoC4/RTC.h ****     uint32 hour;
+  57:Generated_Source\PSoC4/RTC.h ****     uint32 dayOfWeek;
+  58:Generated_Source\PSoC4/RTC.h ****     uint32 dayOfMonth;
+  59:Generated_Source\PSoC4/RTC.h ****     uint32 weekOfMonth;
+  60:Generated_Source\PSoC4/RTC.h ****     uint32 month;
+  61:Generated_Source\PSoC4/RTC.h ****     uint8  timeFormat;
+  62:Generated_Source\PSoC4/RTC.h **** }RTC_DST_TIME;
+  63:Generated_Source\PSoC4/RTC.h **** 
+  64:Generated_Source\PSoC4/RTC.h **** /** @} structures */
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 10
+
+
+  65:Generated_Source\PSoC4/RTC.h **** 
+  66:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+  67:Generated_Source\PSoC4/RTC.h **** *    Enumerated Types and Parameters
+  68:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+  69:Generated_Source\PSoC4/RTC.h **** /* Time Format setting constants */
+  70:Generated_Source\PSoC4/RTC.h **** #define RTC__HOUR_12 1
+  71:Generated_Source\PSoC4/RTC.h **** #define RTC__HOUR_24 0
+  72:Generated_Source\PSoC4/RTC.h **** 
+  73:Generated_Source\PSoC4/RTC.h **** /*  Date Format setting constants */
+  74:Generated_Source\PSoC4/RTC.h **** #define RTC__MM_DD_YYYY 0
+  75:Generated_Source\PSoC4/RTC.h **** #define RTC__DD_MM_YYYY 1
+  76:Generated_Source\PSoC4/RTC.h **** #define RTC__YYYY_MM_DD 2
+  77:Generated_Source\PSoC4/RTC.h **** 
+  78:Generated_Source\PSoC4/RTC.h **** /* Date Type setting constants */
+  79:Generated_Source\PSoC4/RTC.h **** #define RTC__RELATIVE 0
+  80:Generated_Source\PSoC4/RTC.h **** #define RTC__FIXED 1
+  81:Generated_Source\PSoC4/RTC.h **** 
+  82:Generated_Source\PSoC4/RTC.h **** /* DST Hour setting constants */
+  83:Generated_Source\PSoC4/RTC.h **** #define RTC__H0000 0
+  84:Generated_Source\PSoC4/RTC.h **** #define RTC__H0100 1
+  85:Generated_Source\PSoC4/RTC.h **** #define RTC__H0200 2
+  86:Generated_Source\PSoC4/RTC.h **** #define RTC__H0300 3
+  87:Generated_Source\PSoC4/RTC.h **** #define RTC__H0400 4
+  88:Generated_Source\PSoC4/RTC.h **** #define RTC__H0500 5
+  89:Generated_Source\PSoC4/RTC.h **** #define RTC__H0600 6
+  90:Generated_Source\PSoC4/RTC.h **** #define RTC__H0700 7
+  91:Generated_Source\PSoC4/RTC.h **** #define RTC__H0800 8
+  92:Generated_Source\PSoC4/RTC.h **** #define RTC__H0900 9
+  93:Generated_Source\PSoC4/RTC.h **** #define RTC__H1000 10
+  94:Generated_Source\PSoC4/RTC.h **** #define RTC__H1100 11
+  95:Generated_Source\PSoC4/RTC.h **** #define RTC__H1200 12
+  96:Generated_Source\PSoC4/RTC.h **** #define RTC__H1300 13
+  97:Generated_Source\PSoC4/RTC.h **** #define RTC__H1400 14
+  98:Generated_Source\PSoC4/RTC.h **** #define RTC__H1500 15
+  99:Generated_Source\PSoC4/RTC.h **** #define RTC__H1600 16
+ 100:Generated_Source\PSoC4/RTC.h **** #define RTC__H1700 17
+ 101:Generated_Source\PSoC4/RTC.h **** #define RTC__H1800 18
+ 102:Generated_Source\PSoC4/RTC.h **** #define RTC__H1900 19
+ 103:Generated_Source\PSoC4/RTC.h **** #define RTC__H2000 20
+ 104:Generated_Source\PSoC4/RTC.h **** #define RTC__H2100 21
+ 105:Generated_Source\PSoC4/RTC.h **** #define RTC__H2200 22
+ 106:Generated_Source\PSoC4/RTC.h **** #define RTC__H2300 23
+ 107:Generated_Source\PSoC4/RTC.h **** 
+ 108:Generated_Source\PSoC4/RTC.h **** /* DST DayOfWeek setting constants */
+ 109:Generated_Source\PSoC4/RTC.h **** #define RTC__SUNDAY 1
+ 110:Generated_Source\PSoC4/RTC.h **** #define RTC__MONDAY 2
+ 111:Generated_Source\PSoC4/RTC.h **** #define RTC__TUESDAY 3
+ 112:Generated_Source\PSoC4/RTC.h **** #define RTC__WEDNESDAY 4
+ 113:Generated_Source\PSoC4/RTC.h **** #define RTC__THURSDAY 5
+ 114:Generated_Source\PSoC4/RTC.h **** #define RTC__FRIDAY 6
+ 115:Generated_Source\PSoC4/RTC.h **** #define RTC__SATURDAY 7
+ 116:Generated_Source\PSoC4/RTC.h **** 
+ 117:Generated_Source\PSoC4/RTC.h **** /* DST Month setting constants */
+ 118:Generated_Source\PSoC4/RTC.h **** #define RTC__JAN 1
+ 119:Generated_Source\PSoC4/RTC.h **** #define RTC__FEB 2
+ 120:Generated_Source\PSoC4/RTC.h **** #define RTC__MAR 3
+ 121:Generated_Source\PSoC4/RTC.h **** #define RTC__APR 4
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 11
+
+
+ 122:Generated_Source\PSoC4/RTC.h **** #define RTC__MAY 5
+ 123:Generated_Source\PSoC4/RTC.h **** #define RTC__JUN 6
+ 124:Generated_Source\PSoC4/RTC.h **** #define RTC__JUL 7
+ 125:Generated_Source\PSoC4/RTC.h **** #define RTC__AUG 8
+ 126:Generated_Source\PSoC4/RTC.h **** #define RTC__SEP 9
+ 127:Generated_Source\PSoC4/RTC.h **** #define RTC__OCT 10
+ 128:Generated_Source\PSoC4/RTC.h **** #define RTC__NOV 11
+ 129:Generated_Source\PSoC4/RTC.h **** #define RTC__DEC 12
+ 130:Generated_Source\PSoC4/RTC.h **** 
+ 131:Generated_Source\PSoC4/RTC.h **** /* DST WeekOfMonth setting constants */
+ 132:Generated_Source\PSoC4/RTC.h **** #define RTC__FIRST 1
+ 133:Generated_Source\PSoC4/RTC.h **** #define RTC__SECOND 2
+ 134:Generated_Source\PSoC4/RTC.h **** #define RTC__THIRD 3
+ 135:Generated_Source\PSoC4/RTC.h **** #define RTC__FOURTH 4
+ 136:Generated_Source\PSoC4/RTC.h **** #define RTC__FIFTH 5
+ 137:Generated_Source\PSoC4/RTC.h **** #define RTC__LAST 6
+ 138:Generated_Source\PSoC4/RTC.h **** 
+ 139:Generated_Source\PSoC4/RTC.h **** 
+ 140:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DATA_FORMAT     (0u)
+ 141:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_TIME_FORMAT     (0u)
+ 142:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_UPDATE_MODE     (0u)
+ 143:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_SECOND          (0u)
+ 144:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_MINUTE          (0u)
+ 145:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_HOUR            (0u)
+ 146:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DAY             (1u)
+ 147:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_MONTH           (1u)
+ 148:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_YEAR            (1970u)
+ 149:Generated_Source\PSoC4/RTC.h **** 
+ 150:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_ALARM_STATUS    (0u)
+ 151:Generated_Source\PSoC4/RTC.h **** 
+ 152:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STATUS      (1u)
+ 153:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_DATE_TYPE   (1u)
+ 154:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_START_MONTH (3uL)
+ 155:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_START_WOM   (6uL)
+ 156:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_START_DOM   (22uL)
+ 157:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_START_DOW   (1uL)
+ 158:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_START_HRS   (3uL)
+ 159:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STOP_MONTH  (10uL)
+ 160:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STOP_DOM    (22uL)
+ 161:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STOP_DOW    (1uL)
+ 162:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STOP_WOM    (6uL)
+ 163:Generated_Source\PSoC4/RTC.h **** #define RTC_INITIAL_DST_STOP_HRS    (3uL)
+ 164:Generated_Source\PSoC4/RTC.h **** 
+ 165:Generated_Source\PSoC4/RTC.h **** /* Day of week definitions */
+ 166:Generated_Source\PSoC4/RTC.h **** #define RTC_SUNDAY     (RTC__SUNDAY)
+ 167:Generated_Source\PSoC4/RTC.h **** #define RTC_MONDAY     (RTC__MONDAY)
+ 168:Generated_Source\PSoC4/RTC.h **** #define RTC_TUESDAY    (RTC__TUESDAY)
+ 169:Generated_Source\PSoC4/RTC.h **** #define RTC_WEDNESDAY  (RTC__WEDNESDAY)
+ 170:Generated_Source\PSoC4/RTC.h **** #define RTC_THURSDAY   (RTC__THURSDAY)
+ 171:Generated_Source\PSoC4/RTC.h **** #define RTC_FRIDAY     (RTC__FRIDAY)
+ 172:Generated_Source\PSoC4/RTC.h **** #define RTC_SATURDAY   (RTC__SATURDAY)
+ 173:Generated_Source\PSoC4/RTC.h **** 
+ 174:Generated_Source\PSoC4/RTC.h **** /* DST WeekOfMonth setting constants definitions */
+ 175:Generated_Source\PSoC4/RTC.h **** #define RTC_FIRST      (RTC__FIRST)
+ 176:Generated_Source\PSoC4/RTC.h **** #define RTC_SECOND     (RTC__SECOND)
+ 177:Generated_Source\PSoC4/RTC.h **** #define RTC_THIRD      (RTC__THIRD)
+ 178:Generated_Source\PSoC4/RTC.h **** #define RTC_FOURTH     (RTC__FOURTH)
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 12
+
+
+ 179:Generated_Source\PSoC4/RTC.h **** #define RTC_FIFTH      (RTC__FIFTH)
+ 180:Generated_Source\PSoC4/RTC.h **** #define RTC_LAST       (RTC__LAST)
+ 181:Generated_Source\PSoC4/RTC.h **** 
+ 182:Generated_Source\PSoC4/RTC.h **** /* Month definitions */
+ 183:Generated_Source\PSoC4/RTC.h **** #define RTC_JANUARY    (RTC__JAN)
+ 184:Generated_Source\PSoC4/RTC.h **** #define RTC_FEBRUARY   (RTC__FEB)
+ 185:Generated_Source\PSoC4/RTC.h **** #define RTC_MARCH      (RTC__MAR)
+ 186:Generated_Source\PSoC4/RTC.h **** #define RTC_APRIL      (RTC__APR)
+ 187:Generated_Source\PSoC4/RTC.h **** #define RTC_MAY        (RTC__MAY)
+ 188:Generated_Source\PSoC4/RTC.h **** #define RTC_JUNE       (RTC__JUN)
+ 189:Generated_Source\PSoC4/RTC.h **** #define RTC_JULY       (RTC__JUL)
+ 190:Generated_Source\PSoC4/RTC.h **** #define RTC_AUGUST     (RTC__AUG)
+ 191:Generated_Source\PSoC4/RTC.h **** #define RTC_SEPTEMBER  (RTC__SEP)
+ 192:Generated_Source\PSoC4/RTC.h **** #define RTC_OCTOBER    (RTC__OCT)
+ 193:Generated_Source\PSoC4/RTC.h **** #define RTC_NOVEMBER   (RTC__NOV)
+ 194:Generated_Source\PSoC4/RTC.h **** #define RTC_DECEMBER   (RTC__DEC)
+ 195:Generated_Source\PSoC4/RTC.h **** 
+ 196:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_PER_WEEK       (7u)
+ 197:Generated_Source\PSoC4/RTC.h **** 
+ 198:Generated_Source\PSoC4/RTC.h **** /* Number of days in month definitions */
+ 199:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_JANUARY     (31u)
+ 200:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_FEBRUARY    (28u)
+ 201:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_MARCH       (31u)
+ 202:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_APRIL       (30u)
+ 203:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_MAY         (31u)
+ 204:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_JUNE        (30u)
+ 205:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_JULY        (31u)
+ 206:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_AUGUST      (31u)
+ 207:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_SEPTEMBER   (30u)
+ 208:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_OCTOBER     (31u)
+ 209:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_NOVEMBER    (30u)
+ 210:Generated_Source\PSoC4/RTC.h **** #define RTC_DAYS_IN_DECEMBER    (31u)
+ 211:Generated_Source\PSoC4/RTC.h **** 
+ 212:Generated_Source\PSoC4/RTC.h **** #define RTC_MONTHS_PER_YEAR     (12uL)
+ 213:Generated_Source\PSoC4/RTC.h **** 
+ 214:Generated_Source\PSoC4/RTC.h **** #define RTC_HOURS_PER_DAY       (24uL)
+ 215:Generated_Source\PSoC4/RTC.h **** #define RTC_HOURS_PER_HALF_DAY  (12uL)
+ 216:Generated_Source\PSoC4/RTC.h **** 
+ 217:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_PER_MINUTE  (60uL)
+ 218:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_PER_HOUR    (3600uL)
+ 219:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_PER_DAY     (24uL * 3600uL)
+ 220:Generated_Source\PSoC4/RTC.h **** 
+ 221:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_PER_LEAP_YEAR    (366uL * 24uL * 3600uL)
+ 222:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_PER_NONLEAP_YEAR (365uL * 24uL * 3600uL)
+ 223:Generated_Source\PSoC4/RTC.h **** 
+ 224:Generated_Source\PSoC4/RTC.h **** #define RTC_UNIX_TIME_PM   ((12uL * 3600uL) + 1uL)
+ 225:Generated_Source\PSoC4/RTC.h **** 
+ 226:Generated_Source\PSoC4/RTC.h **** /* AM/PM status definitions */
+ 227:Generated_Source\PSoC4/RTC.h **** #define RTC_AM                 (0u)
+ 228:Generated_Source\PSoC4/RTC.h **** #define RTC_PM                 (1u)
+ 229:Generated_Source\PSoC4/RTC.h **** 
+ 230:Generated_Source\PSoC4/RTC.h **** /* Time format definitions */
+ 231:Generated_Source\PSoC4/RTC.h **** #define RTC_12_HOURS_FORMAT    (RTC__HOUR_12)
+ 232:Generated_Source\PSoC4/RTC.h **** #define RTC_24_HOURS_FORMAT    (RTC__HOUR_24)
+ 233:Generated_Source\PSoC4/RTC.h **** 
+ 234:Generated_Source\PSoC4/RTC.h **** /* UNIX time begins in 1970 year.  */
+ 235:Generated_Source\PSoC4/RTC.h **** #define RTC_YEAR_0             (1970u)
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 13
+
+
+ 236:Generated_Source\PSoC4/RTC.h **** 
+ 237:Generated_Source\PSoC4/RTC.h **** /* Definition of date register fields */
+ 238:Generated_Source\PSoC4/RTC.h **** #if(RTC_INITIAL_DATA_FORMAT == RTC__MM_DD_YYYY)
+ 239:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_MONTH_OFFSET   (28u)
+ 240:Generated_Source\PSoC4/RTC.h ****     #define RTC_MONTH_OFFSET      (24u)
+ 241:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_DAY_OFFSET     (20u)
+ 242:Generated_Source\PSoC4/RTC.h ****     #define RTC_DAY_OFFSET        (16u)
+ 243:Generated_Source\PSoC4/RTC.h ****     #define RTC_1000_YEAR_OFFSET  (12u)
+ 244:Generated_Source\PSoC4/RTC.h ****     #define RTC_100_YEAR_OFFSET   (8u)
+ 245:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_YEAR_OFFSET    (4u)
+ 246:Generated_Source\PSoC4/RTC.h ****     #define RTC_YEAR_OFFSET       (0u)
+ 247:Generated_Source\PSoC4/RTC.h **** #elif(RTC_INITIAL_DATA_FORMAT == RTC__DD_MM_YYYY)
+ 248:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_MONTH_OFFSET   (20u)
+ 249:Generated_Source\PSoC4/RTC.h ****     #define RTC_MONTH_OFFSET      (16u)
+ 250:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_DAY_OFFSET     (28u)
+ 251:Generated_Source\PSoC4/RTC.h ****     #define RTC_DAY_OFFSET        (24u)
+ 252:Generated_Source\PSoC4/RTC.h ****     #define RTC_1000_YEAR_OFFSET  (12u)
+ 253:Generated_Source\PSoC4/RTC.h ****     #define RTC_100_YEAR_OFFSET   (8u)
+ 254:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_YEAR_OFFSET    (4u)
+ 255:Generated_Source\PSoC4/RTC.h ****     #define RTC_YEAR_OFFSET       (0u)
+ 256:Generated_Source\PSoC4/RTC.h **** #else
+ 257:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_MONTH_OFFSET   (12u)
+ 258:Generated_Source\PSoC4/RTC.h ****     #define RTC_MONTH_OFFSET      (8u)
+ 259:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_DAY_OFFSET     (4u)
+ 260:Generated_Source\PSoC4/RTC.h ****     #define RTC_DAY_OFFSET        (0u)
+ 261:Generated_Source\PSoC4/RTC.h ****     #define RTC_1000_YEAR_OFFSET  (28u)
+ 262:Generated_Source\PSoC4/RTC.h ****     #define RTC_100_YEAR_OFFSET   (24u)
+ 263:Generated_Source\PSoC4/RTC.h ****     #define RTC_10_YEAR_OFFSET    (20u)
+ 264:Generated_Source\PSoC4/RTC.h ****     #define RTC_YEAR_OFFSET       (16u)
+ 265:Generated_Source\PSoC4/RTC.h **** #endif /* (RTC_INITIAL_DATA_FORMAT == RTC__MM_DD_YYYY) */
+ 266:Generated_Source\PSoC4/RTC.h **** 
+ 267:Generated_Source\PSoC4/RTC.h **** #define RTC_10_MONTH_MASK          (0x00000001uL << RTC_10_MONTH_OFFSET)
+ 268:Generated_Source\PSoC4/RTC.h **** #define RTC_MONTH_MASK             (0x0000000FuL << RTC_MONTH_OFFSET)
+ 269:Generated_Source\PSoC4/RTC.h **** #define RTC_10_DAY_MASK            (0x00000003uL << RTC_10_DAY_OFFSET)
+ 270:Generated_Source\PSoC4/RTC.h **** #define RTC_DAY_MASK               (0x0000000FuL << RTC_DAY_OFFSET)
+ 271:Generated_Source\PSoC4/RTC.h **** #define RTC_1000_YEAR_MASK         (0x00000003uL << RTC_1000_YEAR_OFFSET)
+ 272:Generated_Source\PSoC4/RTC.h **** #define RTC_100_YEAR_MASK          (0x0000000FuL << RTC_100_YEAR_OFFSET)
+ 273:Generated_Source\PSoC4/RTC.h **** #define RTC_10_YEAR_MASK           (0x0000000FuL << RTC_10_YEAR_OFFSET)
+ 274:Generated_Source\PSoC4/RTC.h **** #define RTC_YEAR_MASK              (0x0000000FuL << RTC_YEAR_OFFSET)
+ 275:Generated_Source\PSoC4/RTC.h **** 
+ 276:Generated_Source\PSoC4/RTC.h **** #define  RTC_MONTH_FULL_MASK       (RTC_10_MONTH_MASK  | RTC_MONTH_MASK)
+ 277:Generated_Source\PSoC4/RTC.h **** #define  RTC_DAY_FULL_MASK         (RTC_10_DAY_MASK    | RTC_DAY_MASK)
+ 278:Generated_Source\PSoC4/RTC.h **** #define  RTC_YEAR_FULL_MASK        (RTC_1000_YEAR_MASK | RTC_100_YEAR_MASK |\
+ 279:Generated_Source\PSoC4/RTC.h ****                                                  RTC_10_YEAR_MASK   | RTC_YEAR_MASK)
+ 280:Generated_Source\PSoC4/RTC.h **** 
+ 281:Generated_Source\PSoC4/RTC.h **** 
+ 282:Generated_Source\PSoC4/RTC.h **** /* Definition of time register fields */
+ 283:Generated_Source\PSoC4/RTC.h **** #define RTC_TIME_FORMAT_OFFSET     (23u)
+ 284:Generated_Source\PSoC4/RTC.h **** #define RTC_PERIOD_OF_DAY_OFFSET   (22u)
+ 285:Generated_Source\PSoC4/RTC.h **** #define RTC_10_HOURS_OFFSET        (20u)
+ 286:Generated_Source\PSoC4/RTC.h **** #define RTC_HOURS_OFFSET           (16u)
+ 287:Generated_Source\PSoC4/RTC.h **** #define RTC_10_MINUTES_OFFSET      (12u)
+ 288:Generated_Source\PSoC4/RTC.h **** #define RTC_MINUTES_OFFSET         (8u)
+ 289:Generated_Source\PSoC4/RTC.h **** #define RTC_10_SECONDS_OFFSET      (4u)
+ 290:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_OFFSET         (0u)
+ 291:Generated_Source\PSoC4/RTC.h **** 
+ 292:Generated_Source\PSoC4/RTC.h **** #define RTC_TIME_FORMAT_MASK       (0x00000001uL << RTC_TIME_FORMAT_OFFSET)
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 14
+
+
+ 293:Generated_Source\PSoC4/RTC.h **** #define RTC_PERIOD_OF_DAY_MASK     (0x00000001uL << RTC_PERIOD_OF_DAY_OFFSET)
+ 294:Generated_Source\PSoC4/RTC.h **** #define RTC_10_HOURS_MASK          (0x00000003uL << RTC_10_HOURS_OFFSET)
+ 295:Generated_Source\PSoC4/RTC.h **** #define RTC_HOURS_MASK             (0x0000000FuL << RTC_HOURS_OFFSET)
+ 296:Generated_Source\PSoC4/RTC.h **** #define RTC_10_MINUTES_MASK        (0x00000007uL << RTC_10_MINUTES_OFFSET)
+ 297:Generated_Source\PSoC4/RTC.h **** #define RTC_MINUTES_MASK           (0x0000000FuL << RTC_MINUTES_OFFSET)
+ 298:Generated_Source\PSoC4/RTC.h **** #define RTC_10_SECONDS_MASK        (0x00000007uL << RTC_10_SECONDS_OFFSET)
+ 299:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_MASK           (0x0000000FuL << RTC_SECONDS_OFFSET)
+ 300:Generated_Source\PSoC4/RTC.h **** 
+ 301:Generated_Source\PSoC4/RTC.h **** #define RTC_HOURS_FULL_MASK        (RTC_10_HOURS_MASK   | RTC_HOURS_MASK)
+ 302:Generated_Source\PSoC4/RTC.h **** #define RTC_MINUTES_FULL_MASK      (RTC_10_MINUTES_MASK | RTC_MINUTES_MASK)
+ 303:Generated_Source\PSoC4/RTC.h **** #define RTC_SECONDS_FULL_MASK      (RTC_10_SECONDS_MASK | RTC_SECONDS_MASK)
+ 304:Generated_Source\PSoC4/RTC.h **** 
+ 305:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_SEC_MASK         (0x00000001uL)
+ 306:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_MIN_MASK         (0x00000002uL)
+ 307:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_HOUR_MASK        (0x00000004uL)
+ 308:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_DAYOFWEEK_MASK   (0x00000008uL)
+ 309:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_DAYOFMONTH_MASK  (0x00000010uL)
+ 310:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_MONTH_MASK       (0x00000020uL)
+ 311:Generated_Source\PSoC4/RTC.h **** #define RTC_ALARM_YEAR_MASK        (0x00000040uL)
+ 312:Generated_Source\PSoC4/RTC.h **** 
+ 313:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_DST_OFFSET      (1u)
+ 314:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_ALARM_OFFSET    (2u)
+ 315:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_LY_OFFSET       (3u)
+ 316:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_AM_PM_OFFSET    (4u)
+ 317:Generated_Source\PSoC4/RTC.h **** 
+ 318:Generated_Source\PSoC4/RTC.h **** /* Definition of the RTC status values. */
+ 319:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_DST             (1uL << RTC_STATUS_DST_OFFSET)
+ 320:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_LY              (1uL << RTC_STATUS_LY_OFFSET)
+ 321:Generated_Source\PSoC4/RTC.h **** #define RTC_STATUS_AM_PM           (1uL << RTC_STATUS_AM_PM_OFFSET)
+ 322:Generated_Source\PSoC4/RTC.h **** 
+ 323:Generated_Source\PSoC4/RTC.h **** /* Number of bits per one BCD digit. */
+ 324:Generated_Source\PSoC4/RTC.h **** #define RTC_BCD_NUMBER_SIZE        (4u)
+ 325:Generated_Source\PSoC4/RTC.h **** #define RTC_BCD_ONE_DIGIT_MASK     (0x0000000FuL)
+ 326:Generated_Source\PSoC4/RTC.h **** 
+ 327:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+ 328:Generated_Source\PSoC4/RTC.h **** *    Function Prototypes
+ 329:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+ 330:Generated_Source\PSoC4/RTC.h **** /**
+ 331:Generated_Source\PSoC4/RTC.h **** * \addtogroup group_api
+ 332:Generated_Source\PSoC4/RTC.h **** * @{
+ 333:Generated_Source\PSoC4/RTC.h **** */
+ 334:Generated_Source\PSoC4/RTC.h **** void   RTC_Start(void);
+ 335:Generated_Source\PSoC4/RTC.h **** void   RTC_Stop(void);
+ 336:Generated_Source\PSoC4/RTC.h **** void   RTC_Init(void);
+ 337:Generated_Source\PSoC4/RTC.h **** void   RTC_SetUnixTime(uint64 unixTime);
+ 338:Generated_Source\PSoC4/RTC.h **** uint64 RTC_GetUnixTime(void);
+ 339:Generated_Source\PSoC4/RTC.h **** void   RTC_SetPeriod(uint32 ticks, uint32 refOneSecTicks);
+ 340:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetPeriod(void);
+ 341:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetRefOneSec(void);
+ 342:Generated_Source\PSoC4/RTC.h **** void   RTC_SetDateAndTime(uint32 inputTime, uint32 inputDate);
+ 343:Generated_Source\PSoC4/RTC.h **** void   RTC_GetDateAndTime(RTC_DATE_TIME* dateTime);
+ 344:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetTime(void);
+ 345:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetDate(void);
+ 346:Generated_Source\PSoC4/RTC.h **** void   RTC_SetAlarmDateAndTime(const RTC_DATE_TIME* alarmTime);
+ 347:Generated_Source\PSoC4/RTC.h **** void   RTC_GetAlarmDateAndTime(RTC_DATE_TIME* alarmTimeDate);
+ 348:Generated_Source\PSoC4/RTC.h **** void   RTC_SetAlarmMask(uint32 mask);
+ 349:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetAlarmMask(void);
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 15
+
+
+ 350:Generated_Source\PSoC4/RTC.h **** uint32 RTC_ReadStatus(void);
+ 351:Generated_Source\PSoC4/RTC.h **** uint32 RTC_GetAlarmStatus(void);
+ 352:Generated_Source\PSoC4/RTC.h **** void   RTC_ClearAlarmStatus(void);
+ 353:Generated_Source\PSoC4/RTC.h **** void   RTC_SetDSTStartTime(const RTC_DST_TIME* dstStartTime,
+ 354:Generated_Source\PSoC4/RTC.h ****                                               RTC_DST_DATETYPE_ENUM type);
+ 355:Generated_Source\PSoC4/RTC.h **** void   RTC_SetDSTStopTime(const RTC_DST_TIME* dstStopTime,
+ 356:Generated_Source\PSoC4/RTC.h ****                                              RTC_DST_DATETYPE_ENUM type);
+ 357:Generated_Source\PSoC4/RTC.h **** uint32 RTC_ConvertBCDToDec(uint32 bcdNum);
+ 358:Generated_Source\PSoC4/RTC.h **** uint32 RTC_ConvertDecToBCD(uint32 decNum);
+ 359:Generated_Source\PSoC4/RTC.h **** void   RTC_Update(void);
+ 360:Generated_Source\PSoC4/RTC.h **** void*  RTC_SetAlarmHandler(void (*CallbackFunction)(void));
+ 361:Generated_Source\PSoC4/RTC.h **** 
+ 362:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_ConstructDate(uint32 month, uint32 day, uint32 year);
+ 363:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_ConstructTime(uint32 timeFormat, uint32 stateAmPm, uint32 hour, uint32 min, uint3
+ 364:Generated_Source\PSoC4/RTC.h **** /** @} api */
+ 365:Generated_Source\PSoC4/RTC.h **** 
+ 366:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetTimeFormat(uint32 inputTime);
+ 367:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetTimeFormat(uint32 inputTime, uint32 timeFormat);
+ 368:Generated_Source\PSoC4/RTC.h **** 
+ 369:Generated_Source\PSoC4/RTC.h **** /**
+ 370:Generated_Source\PSoC4/RTC.h **** * \addtogroup group_api
+ 371:Generated_Source\PSoC4/RTC.h **** * @{
+ 372:Generated_Source\PSoC4/RTC.h **** */
+ 373:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_LeapYear(uint32 year);
+ 374:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_IsBitSet(uint32 var, uint32 mask);
+ 375:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetSecond(uint32 inputTime);
+ 376:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetMinutes(uint32 inputTime);
+ 377:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetHours(uint32 inputTime);
+ 378:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetAmPm(uint32 inputTime);
+ 379:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetDay(uint32 date);
+ 380:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetMonth(uint32 date);
+ 381:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetYear(uint32 date);
+ 382:Generated_Source\PSoC4/RTC.h **** /** @} api */
+ 383:Generated_Source\PSoC4/RTC.h **** 
+ 384:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetSecond(uint32 inputTime, uint32 inputSecond);
+ 385:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetMinutes(uint32 inputTime, uint32 inputMinute);
+ 386:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetHours(uint32 inputTime, uint32 inputHours);
+ 387:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetAmPm(uint32 inputTime, uint32 periodOfDay);
+ 388:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetDay(uint32 inputDate, uint32 inputDay);
+ 389:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetMonth(uint32 inputDate, uint32 inputMonth);
+ 390:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_SetYear(uint32 inputDate, uint32 inputYear);
+ 391:Generated_Source\PSoC4/RTC.h **** 
+ 392:Generated_Source\PSoC4/RTC.h **** uint64 RTC_ConstructUnixAlarmTime(const RTC_DATE_TIME* alarmTime, uint8 alarmCfgMask);
+ 393:Generated_Source\PSoC4/RTC.h **** uint64 RTC_GetDstUnixTime(const RTC_DST_TIME* dstTime);
+ 394:Generated_Source\PSoC4/RTC.h **** uint64 RTC_GetNexAlarmTime(uint64 curUnixTime, uint8 alarmCfgMask);
+ 395:Generated_Source\PSoC4/RTC.h **** 
+ 396:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetNextMinSec(uint32 curVal);
+ 397:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetNextHour(uint32 curVal);
+ 398:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetNextDay(uint32 curYear, uint32 curMonth, uint32 curDay, uint32 alarmCfgMask);
+ 399:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetNextMonth(uint32 curMonth);
+ 400:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetNextYear(uint32 curYear);
+ 401:Generated_Source\PSoC4/RTC.h **** static uint32 RTC_GetDayOfWeek(uint32 day, uint32 month, uint32 year);
+ 402:Generated_Source\PSoC4/RTC.h **** 
+ 403:Generated_Source\PSoC4/RTC.h **** uint32 RTC_DaysInMonth(uint32 month, uint32 year);
+ 404:Generated_Source\PSoC4/RTC.h **** uint32 RTC_DaysBeforeMonth(uint32 month, uint32 year);
+ 405:Generated_Source\PSoC4/RTC.h **** 
+ 406:Generated_Source\PSoC4/RTC.h **** /**
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 16
+
+
+ 407:Generated_Source\PSoC4/RTC.h **** * \addtogroup group_api
+ 408:Generated_Source\PSoC4/RTC.h **** * @{
+ 409:Generated_Source\PSoC4/RTC.h **** */
+ 410:Generated_Source\PSoC4/RTC.h **** void   RTC_UnixToDateTime(RTC_DATE_TIME* dateTime, uint64 unixTime, uint32 timeFormat);
+ 411:Generated_Source\PSoC4/RTC.h **** uint64 RTC_DateTimeToUnix(uint32 inputDate, uint32 inputTime);
+ 412:Generated_Source\PSoC4/RTC.h **** /** @} api */
+ 413:Generated_Source\PSoC4/RTC.h **** 
+ 414:Generated_Source\PSoC4/RTC.h **** uint32 RTC_RelativeToFixed(uint32 dayOfWeek, uint32 weekOfMonth, uint32 month, uint32 year);
+ 415:Generated_Source\PSoC4/RTC.h **** 
+ 416:Generated_Source\PSoC4/RTC.h **** 
+ 417:Generated_Source\PSoC4/RTC.h **** #if defined(CYDEV_RTC_SOURCE_WDT)
+ 418:Generated_Source\PSoC4/RTC.h ****     #if((0u != CYDEV_WDT_GENERATE_ISR) && (0u == RTC_INITIAL_UPDATE_MODE))
+ 419:Generated_Source\PSoC4/RTC.h ****         static void RTC_CySysRtcSetCallback(uint32 wdtNumber);
+ 420:Generated_Source\PSoC4/RTC.h ****         static void RTC_CySysRtcResetCallback(uint32 wdtNumber);
+ 421:Generated_Source\PSoC4/RTC.h ****     #endif /* ((0u != CYDEV_WDT_GENERATE_ISR) && (0u == RTC_INITIAL_UPDATE_MODE)) */
+ 422:Generated_Source\PSoC4/RTC.h **** #endif /* (CYDEV_RTC_SOURCE_WDT) */
+ 423:Generated_Source\PSoC4/RTC.h **** 
+ 424:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+ 425:Generated_Source\PSoC4/RTC.h **** * Function Name: RTC_IsBitSet
+ 426:Generated_Source\PSoC4/RTC.h **** ****************************************************************************//**
+ 427:Generated_Source\PSoC4/RTC.h **** *
+ 428:Generated_Source\PSoC4/RTC.h **** * \brief
+ 429:Generated_Source\PSoC4/RTC.h **** *  Checks the state of a bit passed through parameter.
+ 430:Generated_Source\PSoC4/RTC.h **** *
+ 431:Generated_Source\PSoC4/RTC.h **** * \param
+ 432:Generated_Source\PSoC4/RTC.h **** *  var The variable to be checked.
+ 433:Generated_Source\PSoC4/RTC.h **** * \param
+ 434:Generated_Source\PSoC4/RTC.h **** *  mask The mask for a bit to be checked.
+ 435:Generated_Source\PSoC4/RTC.h **** *
+ 436:Generated_Source\PSoC4/RTC.h **** * \return
+ 437:Generated_Source\PSoC4/RTC.h **** *  0u - Bit is not set.
+ 438:Generated_Source\PSoC4/RTC.h **** * \return
+ 439:Generated_Source\PSoC4/RTC.h **** *  1u - Bit is set.
+ 440:Generated_Source\PSoC4/RTC.h **** *
+ 441:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+ 442:Generated_Source\PSoC4/RTC.h **** static CY_INLINE uint32 RTC_IsBitSet(uint32 var, uint32 mask)
+ 443:Generated_Source\PSoC4/RTC.h **** {
+ 444:Generated_Source\PSoC4/RTC.h ****     return ((mask == (var & mask)) ? 1Lu : 0Lu);
+ 445:Generated_Source\PSoC4/RTC.h **** }
+ 446:Generated_Source\PSoC4/RTC.h **** 
+ 447:Generated_Source\PSoC4/RTC.h **** 
+ 448:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+ 449:Generated_Source\PSoC4/RTC.h **** * Function Name: RTC_LeapYear
+ 450:Generated_Source\PSoC4/RTC.h **** ****************************************************************************//**
+ 451:Generated_Source\PSoC4/RTC.h **** *
+ 452:Generated_Source\PSoC4/RTC.h **** * \brief
+ 453:Generated_Source\PSoC4/RTC.h **** * Checks whether the year passed through the parameter is
+ 454:Generated_Source\PSoC4/RTC.h **** * leap or no.
+ 455:Generated_Source\PSoC4/RTC.h **** *
+ 456:Generated_Source\PSoC4/RTC.h **** * \param
+ 457:Generated_Source\PSoC4/RTC.h **** *  year The year to be checked.
+ 458:Generated_Source\PSoC4/RTC.h **** *
+ 459:Generated_Source\PSoC4/RTC.h **** *
+ 460:Generated_Source\PSoC4/RTC.h **** * \return
+ 461:Generated_Source\PSoC4/RTC.h **** *  0u - The year is not leap.
+ 462:Generated_Source\PSoC4/RTC.h **** * \return
+ 463:Generated_Source\PSoC4/RTC.h **** *  1u - The year is leap.
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 17
+
+
+ 464:Generated_Source\PSoC4/RTC.h **** *
+ 465:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+ 466:Generated_Source\PSoC4/RTC.h **** static CY_INLINE uint32 RTC_LeapYear(uint32 year)
+ 467:Generated_Source\PSoC4/RTC.h **** {
+ 468:Generated_Source\PSoC4/RTC.h ****     uint32 retVal;
+ 469:Generated_Source\PSoC4/RTC.h **** 
+ 470:Generated_Source\PSoC4/RTC.h ****     if(((0u == (year % 4Lu)) && (0u != (year % 100Lu))) || (0u == (year % 400Lu)))
+ 471:Generated_Source\PSoC4/RTC.h ****     {
+ 472:Generated_Source\PSoC4/RTC.h ****         retVal = 1uL;
+ 473:Generated_Source\PSoC4/RTC.h ****     }
+ 474:Generated_Source\PSoC4/RTC.h ****     else
+ 475:Generated_Source\PSoC4/RTC.h ****     {
+ 476:Generated_Source\PSoC4/RTC.h ****         retVal = 0uL;
+ 477:Generated_Source\PSoC4/RTC.h ****     }
+ 478:Generated_Source\PSoC4/RTC.h **** 
+ 479:Generated_Source\PSoC4/RTC.h ****     return(retVal);
+ 480:Generated_Source\PSoC4/RTC.h **** }
+ 481:Generated_Source\PSoC4/RTC.h **** 
+ 482:Generated_Source\PSoC4/RTC.h **** 
+ 483:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+ 484:Generated_Source\PSoC4/RTC.h **** * Function Name: RTC_GetSecond
+ 485:Generated_Source\PSoC4/RTC.h **** ****************************************************************************//**
+ 486:Generated_Source\PSoC4/RTC.h **** *
+ 487:Generated_Source\PSoC4/RTC.h **** * \brief
+ 488:Generated_Source\PSoC4/RTC.h **** *  Returns the seconds value from the time value that is passed as a/the parameter.
+ 489:Generated_Source\PSoC4/RTC.h **** *
+ 490:Generated_Source\PSoC4/RTC.h **** * \param
+ 491:Generated_Source\PSoC4/RTC.h **** *  time The time value.
+ 492:Generated_Source\PSoC4/RTC.h **** *
+ 493:Generated_Source\PSoC4/RTC.h **** * \return
+ 494:Generated_Source\PSoC4/RTC.h **** *  The seconds value.
+ 495:Generated_Source\PSoC4/RTC.h **** *
+ 496:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+ 497:Generated_Source\PSoC4/RTC.h **** static CY_INLINE uint32 RTC_GetSecond(uint32 inputTime)
+ 498:Generated_Source\PSoC4/RTC.h **** {
+ 499:Generated_Source\PSoC4/RTC.h ****     uint32 retVal;
+ 500:Generated_Source\PSoC4/RTC.h **** 
+ 501:Generated_Source\PSoC4/RTC.h ****     retVal  = ((inputTime & RTC_10_SECONDS_MASK) >> RTC_10_SECONDS_OFFSET) * 10u;
+ 502:Generated_Source\PSoC4/RTC.h ****     retVal += (inputTime & RTC_SECONDS_MASK) >> RTC_SECONDS_OFFSET;
+ 503:Generated_Source\PSoC4/RTC.h **** 
+ 504:Generated_Source\PSoC4/RTC.h ****     return (retVal);
+ 505:Generated_Source\PSoC4/RTC.h **** }
+ 506:Generated_Source\PSoC4/RTC.h **** 
+ 507:Generated_Source\PSoC4/RTC.h **** 
+ 508:Generated_Source\PSoC4/RTC.h **** /*******************************************************************************
+ 509:Generated_Source\PSoC4/RTC.h **** * Function Name: RTC_GetMinutes
+ 510:Generated_Source\PSoC4/RTC.h **** ****************************************************************************//**
+ 511:Generated_Source\PSoC4/RTC.h **** *
+ 512:Generated_Source\PSoC4/RTC.h **** * \brief
+ 513:Generated_Source\PSoC4/RTC.h **** *  Returns the minutes value from the time value that is passed as a/the 
+ 514:Generated_Source\PSoC4/RTC.h **** * parameter.
+ 515:Generated_Source\PSoC4/RTC.h **** *
+ 516:Generated_Source\PSoC4/RTC.h **** * \param
+ 517:Generated_Source\PSoC4/RTC.h **** *  time The time value.
+ 518:Generated_Source\PSoC4/RTC.h **** *
+ 519:Generated_Source\PSoC4/RTC.h **** * \return
+ 520:Generated_Source\PSoC4/RTC.h **** *  The minutes value.
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 18
+
+
+ 521:Generated_Source\PSoC4/RTC.h **** *
+ 522:Generated_Source\PSoC4/RTC.h **** *******************************************************************************/
+ 523:Generated_Source\PSoC4/RTC.h **** static CY_INLINE uint32 RTC_GetMinutes(uint32 inputTime)
+ 524:Generated_Source\PSoC4/RTC.h **** {
+ 525:Generated_Source\PSoC4/RTC.h ****     uint32 retVal;
+ 526:Generated_Source\PSoC4/RTC.h **** 
+ 527:Generated_Source\PSoC4/RTC.h ****     retVal  = ((inputTime & RTC_10_MINUTES_MASK) >> RTC_10_MINUTES_OFFSET) * 10u;
+ 276              		.loc 2 527 0
+ 277 000e 020B     		lsrs	r2, r0, #12
+ 278 0010 0724     		movs	r4, #7
+ 279 0012 2240     		ands	r2, r4
+ 280 0014 9300     		lsls	r3, r2, #2
+ 281 0016 9A18     		adds	r2, r3, r2
+ 282 0018 5300     		lsls	r3, r2, #1
+ 283              	.LVL37:
+ 528:Generated_Source\PSoC4/RTC.h ****     retVal += (inputTime & RTC_MINUTES_MASK) >> RTC_MINUTES_OFFSET;
+ 284              		.loc 2 528 0
+ 285 001a 010A     		lsrs	r1, r0, #8
+ 286 001c 0F22     		movs	r2, #15
+ 287 001e 1140     		ands	r1, r2
+ 288 0020 5918     		adds	r1, r3, r1
+ 289              	.LVL38:
+ 290              	.LBE7:
+ 291              	.LBE6:
+ 292              	.LBB8:
+ 293              	.LBB9:
+ 501:Generated_Source\PSoC4/RTC.h ****     retVal += (inputTime & RTC_SECONDS_MASK) >> RTC_SECONDS_OFFSET;
+ 294              		.loc 2 501 0
+ 295 0022 0309     		lsrs	r3, r0, #4
+ 296 0024 2340     		ands	r3, r4
+ 297 0026 9C00     		lsls	r4, r3, #2
+ 298 0028 E318     		adds	r3, r4, r3
+ 299 002a 5C00     		lsls	r4, r3, #1
+ 300              	.LVL39:
+ 502:Generated_Source\PSoC4/RTC.h **** 
+ 301              		.loc 2 502 0
+ 302 002c 1040     		ands	r0, r2
+ 303              	.LVL40:
+ 304 002e 2218     		adds	r2, r4, r0
+ 305              	.LVL41:
+ 306              	.LBE9:
+ 307              	.LBE8:
+ 159:main.c        ****     printf("%02lu:%02lu\r\n",RTC_GetMinutes(time), RTC_GetSecond(time));
+ 308              		.loc 1 159 0
+ 309 0030 0248     		ldr	r0, .L17+4
+ 310 0032 FFF7FEFF 		bl	printf
+ 311              	.LVL42:
+ 160:main.c        **** }
+ 312              		.loc 1 160 0
+ 313              		@ sp needed
+ 314 0036 10BD     		pop	{r4, pc}
+ 315              	.L18:
+ 316              		.align	2
+ 317              	.L17:
+ 318 0038 00000000 		.word	time
+ 319 003c 00000000 		.word	.LC4
+ 320              		.cfi_endproc
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 19
+
+
+ 321              	.LFE63:
+ 322              		.size	print_time, .-print_time
+ 323              		.section	.text.main,"ax",%progbits
+ 324              		.align	2
+ 325              		.global	main
+ 326              		.code	16
+ 327              		.thumb_func
+ 328              		.type	main, %function
+ 329              	main:
+ 330              	.LFB61:
+  79:main.c        **** 
+ 331              		.loc 1 79 0
+ 332              		.cfi_startproc
+ 333              		@ Volatile: function does not return.
+ 334              		@ args = 0, pretend = 0, frame = 0
+ 335              		@ frame_needed = 0, uses_anonymous_args = 0
+ 336 0000 10B5     		push	{r4, lr}
+ 337              		.cfi_def_cfa_offset 8
+ 338              		.cfi_offset 4, -8
+ 339              		.cfi_offset 14, -4
+  81:main.c        ****     
+ 340              		.loc 1 81 0
+ 341 0002 FFF7FEFF 		bl	D_UART_Start
+ 342              	.LVL43:
+  83:main.c        ****     
+ 343              		.loc 1 83 0
+ 344 0006 1348     		ldr	r0, .L22
+ 345 0008 FFF7FEFF 		bl	isr_adc_StartEx
+ 346              	.LVL44:
+  85:main.c        ****     ADC_Enable();
+ 347              		.loc 1 85 0
+ 348 000c FFF7FEFF 		bl	ADC_Timer_Start
+ 349              	.LVL45:
+  86:main.c        ****     ADC_Init();
+ 350              		.loc 1 86 0
+ 351 0010 FFF7FEFF 		bl	ADC_Enable
+ 352              	.LVL46:
+  87:main.c        ****     ADC_Start(); /* Initialize ADC */
+ 353              		.loc 1 87 0
+ 354 0014 FFF7FEFF 		bl	ADC_Init
+ 355              	.LVL47:
+  88:main.c        ****     ADC_IRQ_Enable(); /* Enable ADC interrupts */
+ 356              		.loc 1 88 0
+ 357 0018 FFF7FEFF 		bl	ADC_Start
+ 358              	.LVL48:
+  89:main.c        ****     ADC_StartConvert(); /* Start ADC conversions */
+ 359              		.loc 1 89 0
+ 360 001c FFF7FEFF 		bl	ADC_IRQ_Enable
+ 361              	.LVL49:
+  90:main.c        ****     IDAC_Start();
+ 362              		.loc 1 90 0
+ 363 0020 FFF7FEFF 		bl	ADC_StartConvert
+ 364              	.LVL50:
+  91:main.c        ****     
+ 365              		.loc 1 91 0
+ 366 0024 FFF7FEFF 		bl	IDAC_Start
+ 367              	.LVL51:
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 20
+
+
+  93:main.c        ****     
+ 368              		.loc 1 93 0
+ 369 0028 0B48     		ldr	r0, .L22+4
+ 370 002a FFF7FEFF 		bl	puts
+ 371              	.LVL52:
+  99:main.c        **** 
+ 372              		.loc 1 99 0
+ 373 002e FFF7FEFF 		bl	RTC_Start
+ 374              	.LVL53:
+ 102:main.c        **** 
+ 375              		.loc 1 102 0
+ 376 0032 0A49     		ldr	r1, .L22+8
+ 377 0034 0A48     		ldr	r0, .L22+12
+ 378 0036 FFF7FEFF 		bl	RTC_SetDateAndTime
+ 379              	.LVL54:
+ 108:main.c        ****     print_time();
+ 380              		.loc 1 108 0
+ 381              		.syntax divided
+ 382              	@ 108 "main.c" 1
+ 383 003a 62B6     		CPSIE   i
+ 384              	@ 0 "" 2
+ 109:main.c        ****     for(;;){
+ 385              		.loc 1 109 0
+ 386              		.thumb
+ 387              		.syntax unified
+ 388 003c FFF7FEFF 		bl	print_time
+ 389              	.LVL55:
+ 390              	.L20:
+ 111:main.c        ****         {
+ 391              		.loc 1 111 0
+ 392 0040 084B     		ldr	r3, .L22+16
+ 393 0042 1A68     		ldr	r2, [r3]
+ 394 0044 FA23     		movs	r3, #250
+ 395 0046 9B00     		lsls	r3, r3, #2
+ 396 0048 9A42     		cmp	r2, r3
+ 397 004a F9D1     		bne	.L20
+ 113:main.c        ****         }
+ 398              		.loc 1 113 0
+ 399 004c FFF7FEFF 		bl	print_time
+ 400              	.LVL56:
+ 401 0050 F6E7     		b	.L20
+ 402              	.L23:
+ 403 0052 C046     		.align	2
+ 404              	.L22:
+ 405 0054 00000000 		.word	MyADC
+ 406 0058 10000000 		.word	.LC7
+ 407 005c 14202203 		.word	52568084
+ 408 0060 50590200 		.word	153936
+ 409 0064 00000000 		.word	.LANCHOR1
+ 410              		.cfi_endproc
+ 411              	.LFE61:
+ 412              		.size	main, .-main
+ 413              		.global	cnt
+ 414              		.comm	time,4,4
+ 415              		.global	result
+ 416              		.comm	DigitalFilter_Buffer,12,4
+ 417              		.global	DigitalFilter_BCoefs
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 21
+
+
+ 418              		.global	DigitalFilter_ACoefs
+ 419              		.data
+ 420              		.align	2
+ 421              		.set	.LANCHOR0,. + 0
+ 422              		.type	DigitalFilter_ACoefs, %object
+ 423              		.size	DigitalFilter_ACoefs, 12
+ 424              	DigitalFilter_ACoefs:
+ 425 0000 0000803F 		.word	1065353216
+ 426 0004 8C4A92BF 		.word	-1080931700
+ 427 0008 865AD33E 		.word	1054038662
+ 428              		.type	DigitalFilter_BCoefs, %object
+ 429              		.size	DigitalFilter_BCoefs, 12
+ 430              	DigitalFilter_BCoefs:
+ 431 000c 03098A3D 		.word	1032456451
+ 432 0010 3A230A3E 		.word	1040851770
+ 433 0014 03098A3D 		.word	1032456451
+ 434              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 435              		.align	2
+ 436              	.LC4:
+ 437 0000 2530326C 		.ascii	"%02lu:%02lu\015\012\000"
+ 437      753A2530 
+ 437      326C750D 
+ 437      0A00
+ 438 000e 0000     		.space	2
+ 439              	.LC7:
+ 440 0010 44656275 		.ascii	"Debug info start...\015\000"
+ 440      6720696E 
+ 440      666F2073 
+ 440      74617274 
+ 440      2E2E2E0D 
+ 441              		.bss
+ 442              		.align	2
+ 443              		.set	.LANCHOR1,. + 0
+ 444              		.type	cnt, %object
+ 445              		.size	cnt, 4
+ 446              	cnt:
+ 447 0000 00000000 		.space	4
+ 448              		.type	result, %object
+ 449              		.size	result, 2
+ 450              	result:
+ 451 0004 0000     		.space	2
+ 452              		.text
+ 453              	.Letext0:
+ 454              		.file 3 "Generated_Source\\PSoC4/cytypes.h"
+ 455              		.file 4 "Generated_Source\\PSoC4/D_UART_SPI_UART.h"
+ 456              		.file 5 "Generated_Source\\PSoC4/ADC.h"
+ 457              		.file 6 "Generated_Source\\PSoC4/IDAC.h"
+ 458              		.file 7 "c:\\program files (x86)\\cypress\\psoc creator\\4.3\\psoc creator\\import\\gnu\\arm\\5.4.
+ 459              		.file 8 "Generated_Source\\PSoC4/D_UART.h"
+ 460              		.file 9 "Generated_Source\\PSoC4/isr_adc.h"
+ 461              		.file 10 "Generated_Source\\PSoC4/ADC_Timer.h"
+ 462              		.file 11 "Generated_Source\\PSoC4/ADC_IRQ.h"
+ 463              		.file 12 "<built-in>"
+ 464              		.section	.debug_info,"",%progbits
+ 465              	.Ldebug_info0:
+ 466 0000 B2040000 		.4byte	0x4b2
+ 467 0004 0400     		.2byte	0x4
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 22
+
+
+ 468 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 469 000a 04       		.byte	0x4
+ 470 000b 01       		.uleb128 0x1
+ 471 000c CB000000 		.4byte	.LASF50
+ 472 0010 0C       		.byte	0xc
+ 473 0011 F3020000 		.4byte	.LASF51
+ 474 0015 7E000000 		.4byte	.LASF52
+ 475 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 476 001d 00000000 		.4byte	0
+ 477 0021 00000000 		.4byte	.Ldebug_line0
+ 478 0025 02       		.uleb128 0x2
+ 479 0026 04       		.byte	0x4
+ 480 0027 04       		.byte	0x4
+ 481 0028 85010000 		.4byte	.LASF0
+ 482 002c 02       		.uleb128 0x2
+ 483 002d 01       		.byte	0x1
+ 484 002e 06       		.byte	0x6
+ 485 002f 5E020000 		.4byte	.LASF1
+ 486 0033 02       		.uleb128 0x2
+ 487 0034 01       		.byte	0x1
+ 488 0035 08       		.byte	0x8
+ 489 0036 3A020000 		.4byte	.LASF2
+ 490 003a 02       		.uleb128 0x2
+ 491 003b 02       		.byte	0x2
+ 492 003c 05       		.byte	0x5
+ 493 003d 26000000 		.4byte	.LASF3
+ 494 0041 02       		.uleb128 0x2
+ 495 0042 02       		.byte	0x2
+ 496 0043 07       		.byte	0x7
+ 497 0044 AC020000 		.4byte	.LASF4
+ 498 0048 02       		.uleb128 0x2
+ 499 0049 04       		.byte	0x4
+ 500 004a 05       		.byte	0x5
+ 501 004b B8010000 		.4byte	.LASF5
+ 502 004f 02       		.uleb128 0x2
+ 503 0050 04       		.byte	0x4
+ 504 0051 07       		.byte	0x7
+ 505 0052 FA020000 		.4byte	.LASF6
+ 506 0056 02       		.uleb128 0x2
+ 507 0057 08       		.byte	0x8
+ 508 0058 05       		.byte	0x5
+ 509 0059 A0010000 		.4byte	.LASF7
+ 510 005d 02       		.uleb128 0x2
+ 511 005e 08       		.byte	0x8
+ 512 005f 07       		.byte	0x7
+ 513 0060 6A020000 		.4byte	.LASF8
+ 514 0064 03       		.uleb128 0x3
+ 515 0065 04       		.byte	0x4
+ 516 0066 05       		.byte	0x5
+ 517 0067 696E7400 		.ascii	"int\000"
+ 518 006b 02       		.uleb128 0x2
+ 519 006c 04       		.byte	0x4
+ 520 006d 07       		.byte	0x7
+ 521 006e 81020000 		.4byte	.LASF9
+ 522 0072 04       		.uleb128 0x4
+ 523 0073 EC020000 		.4byte	.LASF10
+ 524 0077 03       		.byte	0x3
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 23
+
+
+ 525 0078 F901     		.2byte	0x1f9
+ 526 007a 4F000000 		.4byte	0x4f
+ 527 007e 04       		.uleb128 0x4
+ 528 007f 59010000 		.4byte	.LASF11
+ 529 0083 03       		.byte	0x3
+ 530 0084 FB01     		.2byte	0x1fb
+ 531 0086 3A000000 		.4byte	0x3a
+ 532 008a 02       		.uleb128 0x2
+ 533 008b 08       		.byte	0x8
+ 534 008c 04       		.byte	0x4
+ 535 008d 0C030000 		.4byte	.LASF12
+ 536 0091 02       		.uleb128 0x2
+ 537 0092 01       		.byte	0x1
+ 538 0093 08       		.byte	0x8
+ 539 0094 BF020000 		.4byte	.LASF13
+ 540 0098 04       		.uleb128 0x4
+ 541 0099 98020000 		.4byte	.LASF14
+ 542 009d 03       		.byte	0x3
+ 543 009e A302     		.2byte	0x2a3
+ 544 00a0 A4000000 		.4byte	0xa4
+ 545 00a4 05       		.uleb128 0x5
+ 546 00a5 72000000 		.4byte	0x72
+ 547 00a9 02       		.uleb128 0x2
+ 548 00aa 08       		.byte	0x8
+ 549 00ab 04       		.byte	0x4
+ 550 00ac 0F020000 		.4byte	.LASF15
+ 551 00b0 02       		.uleb128 0x2
+ 552 00b1 04       		.byte	0x4
+ 553 00b2 07       		.byte	0x7
+ 554 00b3 30000000 		.4byte	.LASF16
+ 555 00b7 06       		.uleb128 0x6
+ 556 00b8 04       		.byte	0x4
+ 557 00b9 91000000 		.4byte	0x91
+ 558 00bd 07       		.uleb128 0x7
+ 559 00be BD000000 		.4byte	.LASF17
+ 560 00c2 02       		.byte	0x2
+ 561 00c3 F101     		.2byte	0x1f1
+ 562 00c5 72000000 		.4byte	0x72
+ 563 00c9 03       		.byte	0x3
+ 564 00ca E7000000 		.4byte	0xe7
+ 565 00ce 08       		.uleb128 0x8
+ 566 00cf 05020000 		.4byte	.LASF19
+ 567 00d3 02       		.byte	0x2
+ 568 00d4 F101     		.2byte	0x1f1
+ 569 00d6 72000000 		.4byte	0x72
+ 570 00da 09       		.uleb128 0x9
+ 571 00db 51030000 		.4byte	.LASF20
+ 572 00df 02       		.byte	0x2
+ 573 00e0 F301     		.2byte	0x1f3
+ 574 00e2 72000000 		.4byte	0x72
+ 575 00e6 00       		.byte	0
+ 576 00e7 07       		.uleb128 0x7
+ 577 00e8 C4020000 		.4byte	.LASF18
+ 578 00ec 02       		.byte	0x2
+ 579 00ed 0B02     		.2byte	0x20b
+ 580 00ef 72000000 		.4byte	0x72
+ 581 00f3 03       		.byte	0x3
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 24
+
+
+ 582 00f4 11010000 		.4byte	0x111
+ 583 00f8 08       		.uleb128 0x8
+ 584 00f9 05020000 		.4byte	.LASF19
+ 585 00fd 02       		.byte	0x2
+ 586 00fe 0B02     		.2byte	0x20b
+ 587 0100 72000000 		.4byte	0x72
+ 588 0104 09       		.uleb128 0x9
+ 589 0105 51030000 		.4byte	.LASF20
+ 590 0109 02       		.byte	0x2
+ 591 010a 0D02     		.2byte	0x20d
+ 592 010c 72000000 		.4byte	0x72
+ 593 0110 00       		.byte	0
+ 594 0111 0A       		.uleb128 0xa
+ 595 0112 E0010000 		.4byte	.LASF22
+ 596 0116 01       		.byte	0x1
+ 597 0117 2D       		.byte	0x2d
+ 598 0118 64000000 		.4byte	0x64
+ 599 011c 00000000 		.4byte	.LFB59
+ 600 0120 1C000000 		.4byte	.LFE59-.LFB59
+ 601 0124 01       		.uleb128 0x1
+ 602 0125 9C       		.byte	0x9c
+ 603 0126 6E010000 		.4byte	0x16e
+ 604 012a 0B       		.uleb128 0xb
+ 605 012b 79000000 		.4byte	.LASF21
+ 606 012f 01       		.byte	0x1
+ 607 0130 2D       		.byte	0x2d
+ 608 0131 64000000 		.4byte	0x64
+ 609 0135 00000000 		.4byte	.LLST0
+ 610 0139 0C       		.uleb128 0xc
+ 611 013a 70747200 		.ascii	"ptr\000"
+ 612 013e 01       		.byte	0x1
+ 613 013f 2D       		.byte	0x2d
+ 614 0140 B7000000 		.4byte	0xb7
+ 615 0144 21000000 		.4byte	.LLST1
+ 616 0148 0C       		.uleb128 0xc
+ 617 0149 6C656E00 		.ascii	"len\000"
+ 618 014d 01       		.byte	0x1
+ 619 014e 2D       		.byte	0x2d
+ 620 014f 64000000 		.4byte	0x64
+ 621 0153 4A000000 		.4byte	.LLST2
+ 622 0157 0D       		.uleb128 0xd
+ 623 0158 6900     		.ascii	"i\000"
+ 624 015a 01       		.byte	0x1
+ 625 015b 32       		.byte	0x32
+ 626 015c 64000000 		.4byte	0x64
+ 627 0160 73000000 		.4byte	.LLST3
+ 628 0164 0E       		.uleb128 0xe
+ 629 0165 10000000 		.4byte	.LVL4
+ 630 0169 E6030000 		.4byte	0x3e6
+ 631 016d 00       		.byte	0
+ 632 016e 0F       		.uleb128 0xf
+ 633 016f 1B020000 		.4byte	.LASF23
+ 634 0173 01       		.byte	0x1
+ 635 0174 83       		.byte	0x83
+ 636 0175 25000000 		.4byte	0x25
+ 637 0179 00000000 		.4byte	.LFB62
+ 638 017d 70000000 		.4byte	.LFE62-.LFB62
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 25
+
+
+ 639 0181 01       		.uleb128 0x1
+ 640 0182 9C       		.byte	0x9c
+ 641 0183 B5010000 		.4byte	0x1b5
+ 642 0187 0B       		.uleb128 0xb
+ 643 0188 D3020000 		.4byte	.LASF24
+ 644 018c 01       		.byte	0x1
+ 645 018d 83       		.byte	0x83
+ 646 018e 25000000 		.4byte	0x25
+ 647 0192 92000000 		.4byte	.LLST4
+ 648 0196 0D       		.uleb128 0xd
+ 649 0197 69647800 		.ascii	"idx\000"
+ 650 019b 01       		.byte	0x1
+ 651 019c 85       		.byte	0x85
+ 652 019d 72000000 		.4byte	0x72
+ 653 01a1 B5000000 		.4byte	.LLST5
+ 654 01a5 10       		.uleb128 0x10
+ 655 01a6 D4010000 		.4byte	.LASF25
+ 656 01aa 01       		.byte	0x1
+ 657 01ab 86       		.byte	0x86
+ 658 01ac 25000000 		.4byte	0x25
+ 659 01b0 19010000 		.4byte	.LLST6
+ 660 01b4 00       		.byte	0
+ 661 01b5 11       		.uleb128 0x11
+ 662 01b6 6F010000 		.4byte	.LASF53
+ 663 01ba 01       		.byte	0x1
+ 664 01bb 3C       		.byte	0x3c
+ 665 01bc 00000000 		.4byte	.LFB60
+ 666 01c0 34000000 		.4byte	.LFE60-.LFB60
+ 667 01c4 01       		.uleb128 0x1
+ 668 01c5 9C       		.byte	0x9c
+ 669 01c6 0A020000 		.4byte	0x20a
+ 670 01ca 10       		.uleb128 0x10
+ 671 01cb C1010000 		.4byte	.LASF26
+ 672 01cf 01       		.byte	0x1
+ 673 01d0 3F       		.byte	0x3f
+ 674 01d1 72000000 		.4byte	0x72
+ 675 01d5 7E010000 		.4byte	.LLST7
+ 676 01d9 12       		.uleb128 0x12
+ 677 01da 58030000 		.4byte	.LASF27
+ 678 01de 01       		.byte	0x1
+ 679 01df 46       		.byte	0x46
+ 680 01e0 25000000 		.4byte	0x25
+ 681 01e4 13       		.uleb128 0x13
+ 682 01e5 14000000 		.4byte	.LVL29
+ 683 01e9 F2030000 		.4byte	0x3f2
+ 684 01ed F7010000 		.4byte	0x1f7
+ 685 01f1 14       		.uleb128 0x14
+ 686 01f2 01       		.uleb128 0x1
+ 687 01f3 50       		.byte	0x50
+ 688 01f4 01       		.uleb128 0x1
+ 689 01f5 30       		.byte	0x30
+ 690 01f6 00       		.byte	0
+ 691 01f7 0E       		.uleb128 0xe
+ 692 01f8 1E000000 		.4byte	.LVL31
+ 693 01fc 6E010000 		.4byte	0x16e
+ 694 0200 0E       		.uleb128 0xe
+ 695 0201 26000000 		.4byte	.LVL32
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 26
+
+
+ 696 0205 FD030000 		.4byte	0x3fd
+ 697 0209 00       		.byte	0
+ 698 020a 15       		.uleb128 0x15
+ 699 020b 48020000 		.4byte	.LASF54
+ 700 020f 01       		.byte	0x1
+ 701 0210 9C       		.byte	0x9c
+ 702 0211 00000000 		.4byte	.LFB63
+ 703 0215 40000000 		.4byte	.LFE63-.LFB63
+ 704 0219 01       		.uleb128 0x1
+ 705 021a 9C       		.byte	0x9c
+ 706 021b A5020000 		.4byte	0x2a5
+ 707 021f 16       		.uleb128 0x16
+ 708 0220 E7000000 		.4byte	0xe7
+ 709 0224 0E000000 		.4byte	.LBB6
+ 710 0228 14000000 		.4byte	.LBE6-.LBB6
+ 711 022c 01       		.byte	0x1
+ 712 022d 9F       		.byte	0x9f
+ 713 022e 4F020000 		.4byte	0x24f
+ 714 0232 17       		.uleb128 0x17
+ 715 0233 F8000000 		.4byte	0xf8
+ 716 0237 A0010000 		.4byte	.LLST8
+ 717 023b 18       		.uleb128 0x18
+ 718 023c 0E000000 		.4byte	.LBB7
+ 719 0240 14000000 		.4byte	.LBE7-.LBB7
+ 720 0244 19       		.uleb128 0x19
+ 721 0245 04010000 		.4byte	0x104
+ 722 0249 B3010000 		.4byte	.LLST9
+ 723 024d 00       		.byte	0
+ 724 024e 00       		.byte	0
+ 725 024f 16       		.uleb128 0x16
+ 726 0250 BD000000 		.4byte	0xbd
+ 727 0254 22000000 		.4byte	.LBB8
+ 728 0258 0E000000 		.4byte	.LBE8-.LBB8
+ 729 025c 01       		.byte	0x1
+ 730 025d 9F       		.byte	0x9f
+ 731 025e 7F020000 		.4byte	0x27f
+ 732 0262 17       		.uleb128 0x17
+ 733 0263 CE000000 		.4byte	0xce
+ 734 0267 C6010000 		.4byte	.LLST10
+ 735 026b 18       		.uleb128 0x18
+ 736 026c 22000000 		.4byte	.LBB9
+ 737 0270 0E000000 		.4byte	.LBE9-.LBB9
+ 738 0274 19       		.uleb128 0x19
+ 739 0275 DA000000 		.4byte	0xda
+ 740 0279 E8010000 		.4byte	.LLST11
+ 741 027d 00       		.byte	0
+ 742 027e 00       		.byte	0
+ 743 027f 0E       		.uleb128 0xe
+ 744 0280 06000000 		.4byte	.LVL34
+ 745 0284 08040000 		.4byte	0x408
+ 746 0288 0E       		.uleb128 0xe
+ 747 0289 0A000000 		.4byte	.LVL35
+ 748 028d 14040000 		.4byte	0x414
+ 749 0291 1A       		.uleb128 0x1a
+ 750 0292 36000000 		.4byte	.LVL42
+ 751 0296 20040000 		.4byte	0x420
+ 752 029a 14       		.uleb128 0x14
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 27
+
+
+ 753 029b 01       		.uleb128 0x1
+ 754 029c 50       		.byte	0x50
+ 755 029d 05       		.uleb128 0x5
+ 756 029e 03       		.byte	0x3
+ 757 029f 00000000 		.4byte	.LC4
+ 758 02a3 00       		.byte	0
+ 759 02a4 00       		.byte	0
+ 760 02a5 1B       		.uleb128 0x1b
+ 761 02a6 4E000000 		.4byte	.LASF55
+ 762 02aa 01       		.byte	0x1
+ 763 02ab 4E       		.byte	0x4e
+ 764 02ac 64000000 		.4byte	0x64
+ 765 02b0 00000000 		.4byte	.LFB61
+ 766 02b4 68000000 		.4byte	.LFE61-.LFB61
+ 767 02b8 01       		.uleb128 0x1
+ 768 02b9 9C       		.byte	0x9c
+ 769 02ba 70030000 		.4byte	0x370
+ 770 02be 0E       		.uleb128 0xe
+ 771 02bf 06000000 		.4byte	.LVL43
+ 772 02c3 2B040000 		.4byte	0x42b
+ 773 02c7 13       		.uleb128 0x13
+ 774 02c8 0C000000 		.4byte	.LVL44
+ 775 02cc 36040000 		.4byte	0x436
+ 776 02d0 DE020000 		.4byte	0x2de
+ 777 02d4 14       		.uleb128 0x14
+ 778 02d5 01       		.uleb128 0x1
+ 779 02d6 50       		.byte	0x50
+ 780 02d7 05       		.uleb128 0x5
+ 781 02d8 03       		.byte	0x3
+ 782 02d9 00000000 		.4byte	MyADC
+ 783 02dd 00       		.byte	0
+ 784 02de 0E       		.uleb128 0xe
+ 785 02df 10000000 		.4byte	.LVL45
+ 786 02e3 41040000 		.4byte	0x441
+ 787 02e7 0E       		.uleb128 0xe
+ 788 02e8 14000000 		.4byte	.LVL46
+ 789 02ec 4C040000 		.4byte	0x44c
+ 790 02f0 0E       		.uleb128 0xe
+ 791 02f1 18000000 		.4byte	.LVL47
+ 792 02f5 57040000 		.4byte	0x457
+ 793 02f9 0E       		.uleb128 0xe
+ 794 02fa 1C000000 		.4byte	.LVL48
+ 795 02fe 62040000 		.4byte	0x462
+ 796 0302 0E       		.uleb128 0xe
+ 797 0303 20000000 		.4byte	.LVL49
+ 798 0307 6D040000 		.4byte	0x46d
+ 799 030b 0E       		.uleb128 0xe
+ 800 030c 24000000 		.4byte	.LVL50
+ 801 0310 78040000 		.4byte	0x478
+ 802 0314 0E       		.uleb128 0xe
+ 803 0315 28000000 		.4byte	.LVL51
+ 804 0319 83040000 		.4byte	0x483
+ 805 031d 13       		.uleb128 0x13
+ 806 031e 2E000000 		.4byte	.LVL52
+ 807 0322 8E040000 		.4byte	0x48e
+ 808 0326 34030000 		.4byte	0x334
+ 809 032a 14       		.uleb128 0x14
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 28
+
+
+ 810 032b 01       		.uleb128 0x1
+ 811 032c 50       		.byte	0x50
+ 812 032d 05       		.uleb128 0x5
+ 813 032e 03       		.byte	0x3
+ 814 032f 10000000 		.4byte	.LC7
+ 815 0333 00       		.byte	0
+ 816 0334 0E       		.uleb128 0xe
+ 817 0335 32000000 		.4byte	.LVL53
+ 818 0339 9D040000 		.4byte	0x49d
+ 819 033d 13       		.uleb128 0x13
+ 820 033e 3A000000 		.4byte	.LVL54
+ 821 0342 A9040000 		.4byte	0x4a9
+ 822 0346 5D030000 		.4byte	0x35d
+ 823 034a 14       		.uleb128 0x14
+ 824 034b 01       		.uleb128 0x1
+ 825 034c 50       		.byte	0x50
+ 826 034d 05       		.uleb128 0x5
+ 827 034e 0C       		.byte	0xc
+ 828 034f 50590200 		.4byte	0x25950
+ 829 0353 14       		.uleb128 0x14
+ 830 0354 01       		.uleb128 0x1
+ 831 0355 51       		.byte	0x51
+ 832 0356 05       		.uleb128 0x5
+ 833 0357 0C       		.byte	0xc
+ 834 0358 14202203 		.4byte	0x3222014
+ 835 035c 00       		.byte	0
+ 836 035d 0E       		.uleb128 0xe
+ 837 035e 40000000 		.4byte	.LVL55
+ 838 0362 0A020000 		.4byte	0x20a
+ 839 0366 0E       		.uleb128 0xe
+ 840 0367 50000000 		.4byte	.LVL56
+ 841 036b 0A020000 		.4byte	0x20a
+ 842 036f 00       		.byte	0
+ 843 0370 1C       		.uleb128 0x1c
+ 844 0371 25000000 		.4byte	0x25
+ 845 0375 80030000 		.4byte	0x380
+ 846 0379 1D       		.uleb128 0x1d
+ 847 037a B0000000 		.4byte	0xb0
+ 848 037e 02       		.byte	0x2
+ 849 037f 00       		.byte	0
+ 850 0380 1E       		.uleb128 0x1e
+ 851 0381 8B010000 		.4byte	.LASF28
+ 852 0385 01       		.byte	0x1
+ 853 0386 1A       		.byte	0x1a
+ 854 0387 70030000 		.4byte	0x370
+ 855 038b 05       		.uleb128 0x5
+ 856 038c 03       		.byte	0x3
+ 857 038d 00000000 		.4byte	DigitalFilter_ACoefs
+ 858 0391 1E       		.uleb128 0x1e
+ 859 0392 13030000 		.4byte	.LASF29
+ 860 0396 01       		.byte	0x1
+ 861 0397 1C       		.byte	0x1c
+ 862 0398 70030000 		.4byte	0x370
+ 863 039c 05       		.uleb128 0x5
+ 864 039d 03       		.byte	0x3
+ 865 039e 00000000 		.4byte	DigitalFilter_BCoefs
+ 866 03a2 1E       		.uleb128 0x1e
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 29
+
+
+ 867 03a3 39000000 		.4byte	.LASF30
+ 868 03a7 01       		.byte	0x1
+ 869 03a8 1E       		.byte	0x1e
+ 870 03a9 70030000 		.4byte	0x370
+ 871 03ad 05       		.uleb128 0x5
+ 872 03ae 03       		.byte	0x3
+ 873 03af 00000000 		.4byte	DigitalFilter_Buffer
+ 874 03b3 1E       		.uleb128 0x1e
+ 875 03b4 00000000 		.4byte	.LASF31
+ 876 03b8 01       		.byte	0x1
+ 877 03b9 20       		.byte	0x20
+ 878 03ba 7E000000 		.4byte	0x7e
+ 879 03be 05       		.uleb128 0x5
+ 880 03bf 03       		.byte	0x3
+ 881 03c0 00000000 		.4byte	result
+ 882 03c4 1E       		.uleb128 0x1e
+ 883 03c5 93020000 		.4byte	.LASF32
+ 884 03c9 01       		.byte	0x1
+ 885 03ca 23       		.byte	0x23
+ 886 03cb 72000000 		.4byte	0x72
+ 887 03cf 05       		.uleb128 0x5
+ 888 03d0 03       		.byte	0x3
+ 889 03d1 00000000 		.4byte	time
+ 890 03d5 1F       		.uleb128 0x1f
+ 891 03d6 636E7400 		.ascii	"cnt\000"
+ 892 03da 01       		.byte	0x1
+ 893 03db 24       		.byte	0x24
+ 894 03dc 72000000 		.4byte	0x72
+ 895 03e0 05       		.uleb128 0x5
+ 896 03e1 03       		.byte	0x3
+ 897 03e2 00000000 		.4byte	cnt
+ 898 03e6 20       		.uleb128 0x20
+ 899 03e7 53000000 		.4byte	.LASF33
+ 900 03eb 53000000 		.4byte	.LASF33
+ 901 03ef 04       		.byte	0x4
+ 902 03f0 4403     		.2byte	0x344
+ 903 03f2 21       		.uleb128 0x21
+ 904 03f3 16000000 		.4byte	.LASF34
+ 905 03f7 16000000 		.4byte	.LASF34
+ 906 03fb 05       		.byte	0x5
+ 907 03fc A0       		.byte	0xa0
+ 908 03fd 21       		.uleb128 0x21
+ 909 03fe 9E020000 		.4byte	.LASF35
+ 910 0402 9E020000 		.4byte	.LASF35
+ 911 0406 06       		.byte	0x6
+ 912 0407 54       		.byte	0x54
+ 913 0408 20       		.uleb128 0x20
+ 914 0409 53020000 		.4byte	.LASF36
+ 915 040d 53020000 		.4byte	.LASF36
+ 916 0411 02       		.byte	0x2
+ 917 0412 6701     		.2byte	0x167
+ 918 0414 20       		.uleb128 0x20
+ 919 0415 6D000000 		.4byte	.LASF37
+ 920 0419 6D000000 		.4byte	.LASF37
+ 921 041d 02       		.byte	0x2
+ 922 041e 5801     		.2byte	0x158
+ 923 0420 21       		.uleb128 0x21
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 30
+
+
+ 924 0421 CD010000 		.4byte	.LASF38
+ 925 0425 CD010000 		.4byte	.LASF38
+ 926 0429 07       		.byte	0x7
+ 927 042a BB       		.byte	0xbb
+ 928 042b 21       		.uleb128 0x21
+ 929 042c 28030000 		.4byte	.LASF39
+ 930 0430 28030000 		.4byte	.LASF39
+ 931 0434 08       		.byte	0x8
+ 932 0435 72       		.byte	0x72
+ 933 0436 21       		.uleb128 0x21
+ 934 0437 5F010000 		.4byte	.LASF40
+ 935 043b 5F010000 		.4byte	.LASF40
+ 936 043f 09       		.byte	0x9
+ 937 0440 18       		.byte	0x18
+ 938 0441 21       		.uleb128 0x21
+ 939 0442 75010000 		.4byte	.LASF41
+ 940 0446 75010000 		.4byte	.LASF41
+ 941 044a 0A       		.byte	0xa
+ 942 044b 5A       		.byte	0x5a
+ 943 044c 21       		.uleb128 0x21
+ 944 044d FA010000 		.4byte	.LASF42
+ 945 0451 FA010000 		.4byte	.LASF42
+ 946 0455 05       		.byte	0x5
+ 947 0456 9C       		.byte	0x9c
+ 948 0457 21       		.uleb128 0x21
+ 949 0458 64030000 		.4byte	.LASF43
+ 950 045c 64030000 		.4byte	.LASF43
+ 951 0460 05       		.byte	0x5
+ 952 0461 9B       		.byte	0x9b
+ 953 0462 21       		.uleb128 0x21
+ 954 0463 AE010000 		.4byte	.LASF44
+ 955 0467 AE010000 		.4byte	.LASF44
+ 956 046b 05       		.byte	0x5
+ 957 046c 99       		.byte	0x99
+ 958 046d 21       		.uleb128 0x21
+ 959 046e DD020000 		.4byte	.LASF45
+ 960 0472 DD020000 		.4byte	.LASF45
+ 961 0476 0B       		.byte	0xb
+ 962 0477 23       		.byte	0x23
+ 963 0478 21       		.uleb128 0x21
+ 964 0479 40030000 		.4byte	.LASF46
+ 965 047d 40030000 		.4byte	.LASF46
+ 966 0481 05       		.byte	0x5
+ 967 0482 9D       		.byte	0x9d
+ 968 0483 21       		.uleb128 0x21
+ 969 0484 35030000 		.4byte	.LASF47
+ 970 0488 35030000 		.4byte	.LASF47
+ 971 048c 06       		.byte	0x6
+ 972 048d 52       		.byte	0x52
+ 973 048e 22       		.uleb128 0x22
+ 974 048f 8E020000 		.4byte	.LASF56
+ 975 0493 07000000 		.4byte	.LASF57
+ 976 0497 0C       		.byte	0xc
+ 977 0498 00       		.byte	0
+ 978 0499 8E020000 		.4byte	.LASF56
+ 979 049d 20       		.uleb128 0x20
+ 980 049e 6D030000 		.4byte	.LASF48
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 31
+
+
+ 981 04a2 6D030000 		.4byte	.LASF48
+ 982 04a6 02       		.byte	0x2
+ 983 04a7 4E01     		.2byte	0x14e
+ 984 04a9 20       		.uleb128 0x20
+ 985 04aa E7010000 		.4byte	.LASF49
+ 986 04ae E7010000 		.4byte	.LASF49
+ 987 04b2 02       		.byte	0x2
+ 988 04b3 5601     		.2byte	0x156
+ 989 04b5 00       		.byte	0
+ 990              		.section	.debug_abbrev,"",%progbits
+ 991              	.Ldebug_abbrev0:
+ 992 0000 01       		.uleb128 0x1
+ 993 0001 11       		.uleb128 0x11
+ 994 0002 01       		.byte	0x1
+ 995 0003 25       		.uleb128 0x25
+ 996 0004 0E       		.uleb128 0xe
+ 997 0005 13       		.uleb128 0x13
+ 998 0006 0B       		.uleb128 0xb
+ 999 0007 03       		.uleb128 0x3
+ 1000 0008 0E       		.uleb128 0xe
+ 1001 0009 1B       		.uleb128 0x1b
+ 1002 000a 0E       		.uleb128 0xe
+ 1003 000b 55       		.uleb128 0x55
+ 1004 000c 17       		.uleb128 0x17
+ 1005 000d 11       		.uleb128 0x11
+ 1006 000e 01       		.uleb128 0x1
+ 1007 000f 10       		.uleb128 0x10
+ 1008 0010 17       		.uleb128 0x17
+ 1009 0011 00       		.byte	0
+ 1010 0012 00       		.byte	0
+ 1011 0013 02       		.uleb128 0x2
+ 1012 0014 24       		.uleb128 0x24
+ 1013 0015 00       		.byte	0
+ 1014 0016 0B       		.uleb128 0xb
+ 1015 0017 0B       		.uleb128 0xb
+ 1016 0018 3E       		.uleb128 0x3e
+ 1017 0019 0B       		.uleb128 0xb
+ 1018 001a 03       		.uleb128 0x3
+ 1019 001b 0E       		.uleb128 0xe
+ 1020 001c 00       		.byte	0
+ 1021 001d 00       		.byte	0
+ 1022 001e 03       		.uleb128 0x3
+ 1023 001f 24       		.uleb128 0x24
+ 1024 0020 00       		.byte	0
+ 1025 0021 0B       		.uleb128 0xb
+ 1026 0022 0B       		.uleb128 0xb
+ 1027 0023 3E       		.uleb128 0x3e
+ 1028 0024 0B       		.uleb128 0xb
+ 1029 0025 03       		.uleb128 0x3
+ 1030 0026 08       		.uleb128 0x8
+ 1031 0027 00       		.byte	0
+ 1032 0028 00       		.byte	0
+ 1033 0029 04       		.uleb128 0x4
+ 1034 002a 16       		.uleb128 0x16
+ 1035 002b 00       		.byte	0
+ 1036 002c 03       		.uleb128 0x3
+ 1037 002d 0E       		.uleb128 0xe
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 32
+
+
+ 1038 002e 3A       		.uleb128 0x3a
+ 1039 002f 0B       		.uleb128 0xb
+ 1040 0030 3B       		.uleb128 0x3b
+ 1041 0031 05       		.uleb128 0x5
+ 1042 0032 49       		.uleb128 0x49
+ 1043 0033 13       		.uleb128 0x13
+ 1044 0034 00       		.byte	0
+ 1045 0035 00       		.byte	0
+ 1046 0036 05       		.uleb128 0x5
+ 1047 0037 35       		.uleb128 0x35
+ 1048 0038 00       		.byte	0
+ 1049 0039 49       		.uleb128 0x49
+ 1050 003a 13       		.uleb128 0x13
+ 1051 003b 00       		.byte	0
+ 1052 003c 00       		.byte	0
+ 1053 003d 06       		.uleb128 0x6
+ 1054 003e 0F       		.uleb128 0xf
+ 1055 003f 00       		.byte	0
+ 1056 0040 0B       		.uleb128 0xb
+ 1057 0041 0B       		.uleb128 0xb
+ 1058 0042 49       		.uleb128 0x49
+ 1059 0043 13       		.uleb128 0x13
+ 1060 0044 00       		.byte	0
+ 1061 0045 00       		.byte	0
+ 1062 0046 07       		.uleb128 0x7
+ 1063 0047 2E       		.uleb128 0x2e
+ 1064 0048 01       		.byte	0x1
+ 1065 0049 03       		.uleb128 0x3
+ 1066 004a 0E       		.uleb128 0xe
+ 1067 004b 3A       		.uleb128 0x3a
+ 1068 004c 0B       		.uleb128 0xb
+ 1069 004d 3B       		.uleb128 0x3b
+ 1070 004e 05       		.uleb128 0x5
+ 1071 004f 27       		.uleb128 0x27
+ 1072 0050 19       		.uleb128 0x19
+ 1073 0051 49       		.uleb128 0x49
+ 1074 0052 13       		.uleb128 0x13
+ 1075 0053 20       		.uleb128 0x20
+ 1076 0054 0B       		.uleb128 0xb
+ 1077 0055 01       		.uleb128 0x1
+ 1078 0056 13       		.uleb128 0x13
+ 1079 0057 00       		.byte	0
+ 1080 0058 00       		.byte	0
+ 1081 0059 08       		.uleb128 0x8
+ 1082 005a 05       		.uleb128 0x5
+ 1083 005b 00       		.byte	0
+ 1084 005c 03       		.uleb128 0x3
+ 1085 005d 0E       		.uleb128 0xe
+ 1086 005e 3A       		.uleb128 0x3a
+ 1087 005f 0B       		.uleb128 0xb
+ 1088 0060 3B       		.uleb128 0x3b
+ 1089 0061 05       		.uleb128 0x5
+ 1090 0062 49       		.uleb128 0x49
+ 1091 0063 13       		.uleb128 0x13
+ 1092 0064 00       		.byte	0
+ 1093 0065 00       		.byte	0
+ 1094 0066 09       		.uleb128 0x9
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 33
+
+
+ 1095 0067 34       		.uleb128 0x34
+ 1096 0068 00       		.byte	0
+ 1097 0069 03       		.uleb128 0x3
+ 1098 006a 0E       		.uleb128 0xe
+ 1099 006b 3A       		.uleb128 0x3a
+ 1100 006c 0B       		.uleb128 0xb
+ 1101 006d 3B       		.uleb128 0x3b
+ 1102 006e 05       		.uleb128 0x5
+ 1103 006f 49       		.uleb128 0x49
+ 1104 0070 13       		.uleb128 0x13
+ 1105 0071 00       		.byte	0
+ 1106 0072 00       		.byte	0
+ 1107 0073 0A       		.uleb128 0xa
+ 1108 0074 2E       		.uleb128 0x2e
+ 1109 0075 01       		.byte	0x1
+ 1110 0076 3F       		.uleb128 0x3f
+ 1111 0077 19       		.uleb128 0x19
+ 1112 0078 03       		.uleb128 0x3
+ 1113 0079 0E       		.uleb128 0xe
+ 1114 007a 3A       		.uleb128 0x3a
+ 1115 007b 0B       		.uleb128 0xb
+ 1116 007c 3B       		.uleb128 0x3b
+ 1117 007d 0B       		.uleb128 0xb
+ 1118 007e 27       		.uleb128 0x27
+ 1119 007f 19       		.uleb128 0x19
+ 1120 0080 49       		.uleb128 0x49
+ 1121 0081 13       		.uleb128 0x13
+ 1122 0082 11       		.uleb128 0x11
+ 1123 0083 01       		.uleb128 0x1
+ 1124 0084 12       		.uleb128 0x12
+ 1125 0085 06       		.uleb128 0x6
+ 1126 0086 40       		.uleb128 0x40
+ 1127 0087 18       		.uleb128 0x18
+ 1128 0088 9742     		.uleb128 0x2117
+ 1129 008a 19       		.uleb128 0x19
+ 1130 008b 01       		.uleb128 0x1
+ 1131 008c 13       		.uleb128 0x13
+ 1132 008d 00       		.byte	0
+ 1133 008e 00       		.byte	0
+ 1134 008f 0B       		.uleb128 0xb
+ 1135 0090 05       		.uleb128 0x5
+ 1136 0091 00       		.byte	0
+ 1137 0092 03       		.uleb128 0x3
+ 1138 0093 0E       		.uleb128 0xe
+ 1139 0094 3A       		.uleb128 0x3a
+ 1140 0095 0B       		.uleb128 0xb
+ 1141 0096 3B       		.uleb128 0x3b
+ 1142 0097 0B       		.uleb128 0xb
+ 1143 0098 49       		.uleb128 0x49
+ 1144 0099 13       		.uleb128 0x13
+ 1145 009a 02       		.uleb128 0x2
+ 1146 009b 17       		.uleb128 0x17
+ 1147 009c 00       		.byte	0
+ 1148 009d 00       		.byte	0
+ 1149 009e 0C       		.uleb128 0xc
+ 1150 009f 05       		.uleb128 0x5
+ 1151 00a0 00       		.byte	0
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 34
+
+
+ 1152 00a1 03       		.uleb128 0x3
+ 1153 00a2 08       		.uleb128 0x8
+ 1154 00a3 3A       		.uleb128 0x3a
+ 1155 00a4 0B       		.uleb128 0xb
+ 1156 00a5 3B       		.uleb128 0x3b
+ 1157 00a6 0B       		.uleb128 0xb
+ 1158 00a7 49       		.uleb128 0x49
+ 1159 00a8 13       		.uleb128 0x13
+ 1160 00a9 02       		.uleb128 0x2
+ 1161 00aa 17       		.uleb128 0x17
+ 1162 00ab 00       		.byte	0
+ 1163 00ac 00       		.byte	0
+ 1164 00ad 0D       		.uleb128 0xd
+ 1165 00ae 34       		.uleb128 0x34
+ 1166 00af 00       		.byte	0
+ 1167 00b0 03       		.uleb128 0x3
+ 1168 00b1 08       		.uleb128 0x8
+ 1169 00b2 3A       		.uleb128 0x3a
+ 1170 00b3 0B       		.uleb128 0xb
+ 1171 00b4 3B       		.uleb128 0x3b
+ 1172 00b5 0B       		.uleb128 0xb
+ 1173 00b6 49       		.uleb128 0x49
+ 1174 00b7 13       		.uleb128 0x13
+ 1175 00b8 02       		.uleb128 0x2
+ 1176 00b9 17       		.uleb128 0x17
+ 1177 00ba 00       		.byte	0
+ 1178 00bb 00       		.byte	0
+ 1179 00bc 0E       		.uleb128 0xe
+ 1180 00bd 898201   		.uleb128 0x4109
+ 1181 00c0 00       		.byte	0
+ 1182 00c1 11       		.uleb128 0x11
+ 1183 00c2 01       		.uleb128 0x1
+ 1184 00c3 31       		.uleb128 0x31
+ 1185 00c4 13       		.uleb128 0x13
+ 1186 00c5 00       		.byte	0
+ 1187 00c6 00       		.byte	0
+ 1188 00c7 0F       		.uleb128 0xf
+ 1189 00c8 2E       		.uleb128 0x2e
+ 1190 00c9 01       		.byte	0x1
+ 1191 00ca 3F       		.uleb128 0x3f
+ 1192 00cb 19       		.uleb128 0x19
+ 1193 00cc 03       		.uleb128 0x3
+ 1194 00cd 0E       		.uleb128 0xe
+ 1195 00ce 3A       		.uleb128 0x3a
+ 1196 00cf 0B       		.uleb128 0xb
+ 1197 00d0 3B       		.uleb128 0x3b
+ 1198 00d1 0B       		.uleb128 0xb
+ 1199 00d2 27       		.uleb128 0x27
+ 1200 00d3 19       		.uleb128 0x19
+ 1201 00d4 49       		.uleb128 0x49
+ 1202 00d5 13       		.uleb128 0x13
+ 1203 00d6 11       		.uleb128 0x11
+ 1204 00d7 01       		.uleb128 0x1
+ 1205 00d8 12       		.uleb128 0x12
+ 1206 00d9 06       		.uleb128 0x6
+ 1207 00da 40       		.uleb128 0x40
+ 1208 00db 18       		.uleb128 0x18
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 35
+
+
+ 1209 00dc 9642     		.uleb128 0x2116
+ 1210 00de 19       		.uleb128 0x19
+ 1211 00df 01       		.uleb128 0x1
+ 1212 00e0 13       		.uleb128 0x13
+ 1213 00e1 00       		.byte	0
+ 1214 00e2 00       		.byte	0
+ 1215 00e3 10       		.uleb128 0x10
+ 1216 00e4 34       		.uleb128 0x34
+ 1217 00e5 00       		.byte	0
+ 1218 00e6 03       		.uleb128 0x3
+ 1219 00e7 0E       		.uleb128 0xe
+ 1220 00e8 3A       		.uleb128 0x3a
+ 1221 00e9 0B       		.uleb128 0xb
+ 1222 00ea 3B       		.uleb128 0x3b
+ 1223 00eb 0B       		.uleb128 0xb
+ 1224 00ec 49       		.uleb128 0x49
+ 1225 00ed 13       		.uleb128 0x13
+ 1226 00ee 02       		.uleb128 0x2
+ 1227 00ef 17       		.uleb128 0x17
+ 1228 00f0 00       		.byte	0
+ 1229 00f1 00       		.byte	0
+ 1230 00f2 11       		.uleb128 0x11
+ 1231 00f3 2E       		.uleb128 0x2e
+ 1232 00f4 01       		.byte	0x1
+ 1233 00f5 3F       		.uleb128 0x3f
+ 1234 00f6 19       		.uleb128 0x19
+ 1235 00f7 03       		.uleb128 0x3
+ 1236 00f8 0E       		.uleb128 0xe
+ 1237 00f9 3A       		.uleb128 0x3a
+ 1238 00fa 0B       		.uleb128 0xb
+ 1239 00fb 3B       		.uleb128 0x3b
+ 1240 00fc 0B       		.uleb128 0xb
+ 1241 00fd 27       		.uleb128 0x27
+ 1242 00fe 19       		.uleb128 0x19
+ 1243 00ff 11       		.uleb128 0x11
+ 1244 0100 01       		.uleb128 0x1
+ 1245 0101 12       		.uleb128 0x12
+ 1246 0102 06       		.uleb128 0x6
+ 1247 0103 40       		.uleb128 0x40
+ 1248 0104 18       		.uleb128 0x18
+ 1249 0105 9642     		.uleb128 0x2116
+ 1250 0107 19       		.uleb128 0x19
+ 1251 0108 01       		.uleb128 0x1
+ 1252 0109 13       		.uleb128 0x13
+ 1253 010a 00       		.byte	0
+ 1254 010b 00       		.byte	0
+ 1255 010c 12       		.uleb128 0x12
+ 1256 010d 34       		.uleb128 0x34
+ 1257 010e 00       		.byte	0
+ 1258 010f 03       		.uleb128 0x3
+ 1259 0110 0E       		.uleb128 0xe
+ 1260 0111 3A       		.uleb128 0x3a
+ 1261 0112 0B       		.uleb128 0xb
+ 1262 0113 3B       		.uleb128 0x3b
+ 1263 0114 0B       		.uleb128 0xb
+ 1264 0115 49       		.uleb128 0x49
+ 1265 0116 13       		.uleb128 0x13
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 36
+
+
+ 1266 0117 00       		.byte	0
+ 1267 0118 00       		.byte	0
+ 1268 0119 13       		.uleb128 0x13
+ 1269 011a 898201   		.uleb128 0x4109
+ 1270 011d 01       		.byte	0x1
+ 1271 011e 11       		.uleb128 0x11
+ 1272 011f 01       		.uleb128 0x1
+ 1273 0120 31       		.uleb128 0x31
+ 1274 0121 13       		.uleb128 0x13
+ 1275 0122 01       		.uleb128 0x1
+ 1276 0123 13       		.uleb128 0x13
+ 1277 0124 00       		.byte	0
+ 1278 0125 00       		.byte	0
+ 1279 0126 14       		.uleb128 0x14
+ 1280 0127 8A8201   		.uleb128 0x410a
+ 1281 012a 00       		.byte	0
+ 1282 012b 02       		.uleb128 0x2
+ 1283 012c 18       		.uleb128 0x18
+ 1284 012d 9142     		.uleb128 0x2111
+ 1285 012f 18       		.uleb128 0x18
+ 1286 0130 00       		.byte	0
+ 1287 0131 00       		.byte	0
+ 1288 0132 15       		.uleb128 0x15
+ 1289 0133 2E       		.uleb128 0x2e
+ 1290 0134 01       		.byte	0x1
+ 1291 0135 3F       		.uleb128 0x3f
+ 1292 0136 19       		.uleb128 0x19
+ 1293 0137 03       		.uleb128 0x3
+ 1294 0138 0E       		.uleb128 0xe
+ 1295 0139 3A       		.uleb128 0x3a
+ 1296 013a 0B       		.uleb128 0xb
+ 1297 013b 3B       		.uleb128 0x3b
+ 1298 013c 0B       		.uleb128 0xb
+ 1299 013d 11       		.uleb128 0x11
+ 1300 013e 01       		.uleb128 0x1
+ 1301 013f 12       		.uleb128 0x12
+ 1302 0140 06       		.uleb128 0x6
+ 1303 0141 40       		.uleb128 0x40
+ 1304 0142 18       		.uleb128 0x18
+ 1305 0143 9742     		.uleb128 0x2117
+ 1306 0145 19       		.uleb128 0x19
+ 1307 0146 01       		.uleb128 0x1
+ 1308 0147 13       		.uleb128 0x13
+ 1309 0148 00       		.byte	0
+ 1310 0149 00       		.byte	0
+ 1311 014a 16       		.uleb128 0x16
+ 1312 014b 1D       		.uleb128 0x1d
+ 1313 014c 01       		.byte	0x1
+ 1314 014d 31       		.uleb128 0x31
+ 1315 014e 13       		.uleb128 0x13
+ 1316 014f 11       		.uleb128 0x11
+ 1317 0150 01       		.uleb128 0x1
+ 1318 0151 12       		.uleb128 0x12
+ 1319 0152 06       		.uleb128 0x6
+ 1320 0153 58       		.uleb128 0x58
+ 1321 0154 0B       		.uleb128 0xb
+ 1322 0155 59       		.uleb128 0x59
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 37
+
+
+ 1323 0156 0B       		.uleb128 0xb
+ 1324 0157 01       		.uleb128 0x1
+ 1325 0158 13       		.uleb128 0x13
+ 1326 0159 00       		.byte	0
+ 1327 015a 00       		.byte	0
+ 1328 015b 17       		.uleb128 0x17
+ 1329 015c 05       		.uleb128 0x5
+ 1330 015d 00       		.byte	0
+ 1331 015e 31       		.uleb128 0x31
+ 1332 015f 13       		.uleb128 0x13
+ 1333 0160 02       		.uleb128 0x2
+ 1334 0161 17       		.uleb128 0x17
+ 1335 0162 00       		.byte	0
+ 1336 0163 00       		.byte	0
+ 1337 0164 18       		.uleb128 0x18
+ 1338 0165 0B       		.uleb128 0xb
+ 1339 0166 01       		.byte	0x1
+ 1340 0167 11       		.uleb128 0x11
+ 1341 0168 01       		.uleb128 0x1
+ 1342 0169 12       		.uleb128 0x12
+ 1343 016a 06       		.uleb128 0x6
+ 1344 016b 00       		.byte	0
+ 1345 016c 00       		.byte	0
+ 1346 016d 19       		.uleb128 0x19
+ 1347 016e 34       		.uleb128 0x34
+ 1348 016f 00       		.byte	0
+ 1349 0170 31       		.uleb128 0x31
+ 1350 0171 13       		.uleb128 0x13
+ 1351 0172 02       		.uleb128 0x2
+ 1352 0173 17       		.uleb128 0x17
+ 1353 0174 00       		.byte	0
+ 1354 0175 00       		.byte	0
+ 1355 0176 1A       		.uleb128 0x1a
+ 1356 0177 898201   		.uleb128 0x4109
+ 1357 017a 01       		.byte	0x1
+ 1358 017b 11       		.uleb128 0x11
+ 1359 017c 01       		.uleb128 0x1
+ 1360 017d 31       		.uleb128 0x31
+ 1361 017e 13       		.uleb128 0x13
+ 1362 017f 00       		.byte	0
+ 1363 0180 00       		.byte	0
+ 1364 0181 1B       		.uleb128 0x1b
+ 1365 0182 2E       		.uleb128 0x2e
+ 1366 0183 01       		.byte	0x1
+ 1367 0184 3F       		.uleb128 0x3f
+ 1368 0185 19       		.uleb128 0x19
+ 1369 0186 03       		.uleb128 0x3
+ 1370 0187 0E       		.uleb128 0xe
+ 1371 0188 3A       		.uleb128 0x3a
+ 1372 0189 0B       		.uleb128 0xb
+ 1373 018a 3B       		.uleb128 0x3b
+ 1374 018b 0B       		.uleb128 0xb
+ 1375 018c 27       		.uleb128 0x27
+ 1376 018d 19       		.uleb128 0x19
+ 1377 018e 49       		.uleb128 0x49
+ 1378 018f 13       		.uleb128 0x13
+ 1379 0190 8701     		.uleb128 0x87
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 38
+
+
+ 1380 0192 19       		.uleb128 0x19
+ 1381 0193 11       		.uleb128 0x11
+ 1382 0194 01       		.uleb128 0x1
+ 1383 0195 12       		.uleb128 0x12
+ 1384 0196 06       		.uleb128 0x6
+ 1385 0197 40       		.uleb128 0x40
+ 1386 0198 18       		.uleb128 0x18
+ 1387 0199 9742     		.uleb128 0x2117
+ 1388 019b 19       		.uleb128 0x19
+ 1389 019c 01       		.uleb128 0x1
+ 1390 019d 13       		.uleb128 0x13
+ 1391 019e 00       		.byte	0
+ 1392 019f 00       		.byte	0
+ 1393 01a0 1C       		.uleb128 0x1c
+ 1394 01a1 01       		.uleb128 0x1
+ 1395 01a2 01       		.byte	0x1
+ 1396 01a3 49       		.uleb128 0x49
+ 1397 01a4 13       		.uleb128 0x13
+ 1398 01a5 01       		.uleb128 0x1
+ 1399 01a6 13       		.uleb128 0x13
+ 1400 01a7 00       		.byte	0
+ 1401 01a8 00       		.byte	0
+ 1402 01a9 1D       		.uleb128 0x1d
+ 1403 01aa 21       		.uleb128 0x21
+ 1404 01ab 00       		.byte	0
+ 1405 01ac 49       		.uleb128 0x49
+ 1406 01ad 13       		.uleb128 0x13
+ 1407 01ae 2F       		.uleb128 0x2f
+ 1408 01af 0B       		.uleb128 0xb
+ 1409 01b0 00       		.byte	0
+ 1410 01b1 00       		.byte	0
+ 1411 01b2 1E       		.uleb128 0x1e
+ 1412 01b3 34       		.uleb128 0x34
+ 1413 01b4 00       		.byte	0
+ 1414 01b5 03       		.uleb128 0x3
+ 1415 01b6 0E       		.uleb128 0xe
+ 1416 01b7 3A       		.uleb128 0x3a
+ 1417 01b8 0B       		.uleb128 0xb
+ 1418 01b9 3B       		.uleb128 0x3b
+ 1419 01ba 0B       		.uleb128 0xb
+ 1420 01bb 49       		.uleb128 0x49
+ 1421 01bc 13       		.uleb128 0x13
+ 1422 01bd 3F       		.uleb128 0x3f
+ 1423 01be 19       		.uleb128 0x19
+ 1424 01bf 02       		.uleb128 0x2
+ 1425 01c0 18       		.uleb128 0x18
+ 1426 01c1 00       		.byte	0
+ 1427 01c2 00       		.byte	0
+ 1428 01c3 1F       		.uleb128 0x1f
+ 1429 01c4 34       		.uleb128 0x34
+ 1430 01c5 00       		.byte	0
+ 1431 01c6 03       		.uleb128 0x3
+ 1432 01c7 08       		.uleb128 0x8
+ 1433 01c8 3A       		.uleb128 0x3a
+ 1434 01c9 0B       		.uleb128 0xb
+ 1435 01ca 3B       		.uleb128 0x3b
+ 1436 01cb 0B       		.uleb128 0xb
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 39
+
+
+ 1437 01cc 49       		.uleb128 0x49
+ 1438 01cd 13       		.uleb128 0x13
+ 1439 01ce 3F       		.uleb128 0x3f
+ 1440 01cf 19       		.uleb128 0x19
+ 1441 01d0 02       		.uleb128 0x2
+ 1442 01d1 18       		.uleb128 0x18
+ 1443 01d2 00       		.byte	0
+ 1444 01d3 00       		.byte	0
+ 1445 01d4 20       		.uleb128 0x20
+ 1446 01d5 2E       		.uleb128 0x2e
+ 1447 01d6 00       		.byte	0
+ 1448 01d7 3F       		.uleb128 0x3f
+ 1449 01d8 19       		.uleb128 0x19
+ 1450 01d9 3C       		.uleb128 0x3c
+ 1451 01da 19       		.uleb128 0x19
+ 1452 01db 6E       		.uleb128 0x6e
+ 1453 01dc 0E       		.uleb128 0xe
+ 1454 01dd 03       		.uleb128 0x3
+ 1455 01de 0E       		.uleb128 0xe
+ 1456 01df 3A       		.uleb128 0x3a
+ 1457 01e0 0B       		.uleb128 0xb
+ 1458 01e1 3B       		.uleb128 0x3b
+ 1459 01e2 05       		.uleb128 0x5
+ 1460 01e3 00       		.byte	0
+ 1461 01e4 00       		.byte	0
+ 1462 01e5 21       		.uleb128 0x21
+ 1463 01e6 2E       		.uleb128 0x2e
+ 1464 01e7 00       		.byte	0
+ 1465 01e8 3F       		.uleb128 0x3f
+ 1466 01e9 19       		.uleb128 0x19
+ 1467 01ea 3C       		.uleb128 0x3c
+ 1468 01eb 19       		.uleb128 0x19
+ 1469 01ec 6E       		.uleb128 0x6e
+ 1470 01ed 0E       		.uleb128 0xe
+ 1471 01ee 03       		.uleb128 0x3
+ 1472 01ef 0E       		.uleb128 0xe
+ 1473 01f0 3A       		.uleb128 0x3a
+ 1474 01f1 0B       		.uleb128 0xb
+ 1475 01f2 3B       		.uleb128 0x3b
+ 1476 01f3 0B       		.uleb128 0xb
+ 1477 01f4 00       		.byte	0
+ 1478 01f5 00       		.byte	0
+ 1479 01f6 22       		.uleb128 0x22
+ 1480 01f7 2E       		.uleb128 0x2e
+ 1481 01f8 00       		.byte	0
+ 1482 01f9 3F       		.uleb128 0x3f
+ 1483 01fa 19       		.uleb128 0x19
+ 1484 01fb 3C       		.uleb128 0x3c
+ 1485 01fc 19       		.uleb128 0x19
+ 1486 01fd 6E       		.uleb128 0x6e
+ 1487 01fe 0E       		.uleb128 0xe
+ 1488 01ff 03       		.uleb128 0x3
+ 1489 0200 0E       		.uleb128 0xe
+ 1490 0201 3A       		.uleb128 0x3a
+ 1491 0202 0B       		.uleb128 0xb
+ 1492 0203 3B       		.uleb128 0x3b
+ 1493 0204 0B       		.uleb128 0xb
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 40
+
+
+ 1494 0205 6E       		.uleb128 0x6e
+ 1495 0206 0E       		.uleb128 0xe
+ 1496 0207 00       		.byte	0
+ 1497 0208 00       		.byte	0
+ 1498 0209 00       		.byte	0
+ 1499              		.section	.debug_loc,"",%progbits
+ 1500              	.Ldebug_loc0:
+ 1501              	.LLST0:
+ 1502 0000 00000000 		.4byte	.LVL0
+ 1503 0004 08000000 		.4byte	.LVL2
+ 1504 0008 0100     		.2byte	0x1
+ 1505 000a 50       		.byte	0x50
+ 1506 000b 08000000 		.4byte	.LVL2
+ 1507 000f 1C000000 		.4byte	.LFE59
+ 1508 0013 0400     		.2byte	0x4
+ 1509 0015 F3       		.byte	0xf3
+ 1510 0016 01       		.uleb128 0x1
+ 1511 0017 50       		.byte	0x50
+ 1512 0018 9F       		.byte	0x9f
+ 1513 0019 00000000 		.4byte	0
+ 1514 001d 00000000 		.4byte	0
+ 1515              	.LLST1:
+ 1516 0021 00000000 		.4byte	.LVL0
+ 1517 0025 0A000000 		.4byte	.LVL3
+ 1518 0029 0100     		.2byte	0x1
+ 1519 002b 51       		.byte	0x51
+ 1520 002c 0A000000 		.4byte	.LVL3
+ 1521 0030 14000000 		.4byte	.LVL6
+ 1522 0034 0100     		.2byte	0x1
+ 1523 0036 55       		.byte	0x55
+ 1524 0037 14000000 		.4byte	.LVL6
+ 1525 003b 1C000000 		.4byte	.LFE59
+ 1526 003f 0100     		.2byte	0x1
+ 1527 0041 51       		.byte	0x51
+ 1528 0042 00000000 		.4byte	0
+ 1529 0046 00000000 		.4byte	0
+ 1530              	.LLST2:
+ 1531 004a 00000000 		.4byte	.LVL0
+ 1532 004e 08000000 		.4byte	.LVL2
+ 1533 0052 0100     		.2byte	0x1
+ 1534 0054 52       		.byte	0x52
+ 1535 0055 08000000 		.4byte	.LVL2
+ 1536 0059 1A000000 		.4byte	.LVL8
+ 1537 005d 0100     		.2byte	0x1
+ 1538 005f 56       		.byte	0x56
+ 1539 0060 1A000000 		.4byte	.LVL8
+ 1540 0064 1C000000 		.4byte	.LFE59
+ 1541 0068 0100     		.2byte	0x1
+ 1542 006a 50       		.byte	0x50
+ 1543 006b 00000000 		.4byte	0
+ 1544 006f 00000000 		.4byte	0
+ 1545              	.LLST3:
+ 1546 0073 04000000 		.4byte	.LVL1
+ 1547 0077 08000000 		.4byte	.LVL2
+ 1548 007b 0200     		.2byte	0x2
+ 1549 007d 30       		.byte	0x30
+ 1550 007e 9F       		.byte	0x9f
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 41
+
+
+ 1551 007f 08000000 		.4byte	.LVL2
+ 1552 0083 1A000000 		.4byte	.LVL7
+ 1553 0087 0100     		.2byte	0x1
+ 1554 0089 54       		.byte	0x54
+ 1555 008a 00000000 		.4byte	0
+ 1556 008e 00000000 		.4byte	0
+ 1557              	.LLST4:
+ 1558 0092 00000000 		.4byte	.LVL9
+ 1559 0096 1E000000 		.4byte	.LVL15
+ 1560 009a 0100     		.2byte	0x1
+ 1561 009c 50       		.byte	0x50
+ 1562 009d 1E000000 		.4byte	.LVL15
+ 1563 00a1 70000000 		.4byte	.LFE62
+ 1564 00a5 0600     		.2byte	0x6
+ 1565 00a7 F3       		.byte	0xf3
+ 1566 00a8 03       		.uleb128 0x3
+ 1567 00a9 F5       		.byte	0xf5
+ 1568 00aa 00       		.uleb128 0
+ 1569 00ab 25       		.uleb128 0x25
+ 1570 00ac 9F       		.byte	0x9f
+ 1571 00ad 00000000 		.4byte	0
+ 1572 00b1 00000000 		.4byte	0
+ 1573              	.LLST5:
+ 1574 00b5 04000000 		.4byte	.LVL10
+ 1575 00b9 08000000 		.4byte	.LVL11
+ 1576 00bd 0200     		.2byte	0x2
+ 1577 00bf 32       		.byte	0x32
+ 1578 00c0 9F       		.byte	0x9f
+ 1579 00c1 08000000 		.4byte	.LVL11
+ 1580 00c5 12000000 		.4byte	.LVL12
+ 1581 00c9 0100     		.2byte	0x1
+ 1582 00cb 54       		.byte	0x54
+ 1583 00cc 12000000 		.4byte	.LVL12
+ 1584 00d0 14000000 		.4byte	.LVL13
+ 1585 00d4 0300     		.2byte	0x3
+ 1586 00d6 73       		.byte	0x73
+ 1587 00d7 01       		.sleb128 1
+ 1588 00d8 9F       		.byte	0x9f
+ 1589 00d9 14000000 		.4byte	.LVL13
+ 1590 00dd 16000000 		.4byte	.LVL14
+ 1591 00e1 0100     		.2byte	0x1
+ 1592 00e3 53       		.byte	0x53
+ 1593 00e4 16000000 		.4byte	.LVL14
+ 1594 00e8 1E000000 		.4byte	.LVL15
+ 1595 00ec 0100     		.2byte	0x1
+ 1596 00ee 54       		.byte	0x54
+ 1597 00ef 1E000000 		.4byte	.LVL15
+ 1598 00f3 40000000 		.4byte	.LVL20
+ 1599 00f7 0100     		.2byte	0x1
+ 1600 00f9 55       		.byte	0x55
+ 1601 00fa 40000000 		.4byte	.LVL20
+ 1602 00fe 44000000 		.4byte	.LVL21
+ 1603 0102 0200     		.2byte	0x2
+ 1604 0104 30       		.byte	0x30
+ 1605 0105 9F       		.byte	0x9f
+ 1606 0106 44000000 		.4byte	.LVL21
+ 1607 010a 66000000 		.4byte	.LVL26
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 42
+
+
+ 1608 010e 0100     		.2byte	0x1
+ 1609 0110 54       		.byte	0x54
+ 1610 0111 00000000 		.4byte	0
+ 1611 0115 00000000 		.4byte	0
+ 1612              	.LLST6:
+ 1613 0119 1E000000 		.4byte	.LVL15
+ 1614 011d 36000000 		.4byte	.LVL18
+ 1615 0121 0100     		.2byte	0x1
+ 1616 0123 56       		.byte	0x56
+ 1617 0124 36000000 		.4byte	.LVL18
+ 1618 0128 38000000 		.4byte	.LVL19
+ 1619 012c 0100     		.2byte	0x1
+ 1620 012e 50       		.byte	0x50
+ 1621 012f 38000000 		.4byte	.LVL19
+ 1622 0133 40000000 		.4byte	.LVL20
+ 1623 0137 0100     		.2byte	0x1
+ 1624 0139 56       		.byte	0x56
+ 1625 013a 40000000 		.4byte	.LVL20
+ 1626 013e 44000000 		.4byte	.LVL21
+ 1627 0142 0600     		.2byte	0x6
+ 1628 0144 9E       		.byte	0x9e
+ 1629 0145 04       		.uleb128 0x4
+ 1630 0146 00000000 		.4byte	0
+ 1631 014a 44000000 		.4byte	.LVL21
+ 1632 014e 5E000000 		.4byte	.LVL24
+ 1633 0152 0100     		.2byte	0x1
+ 1634 0154 55       		.byte	0x55
+ 1635 0155 5E000000 		.4byte	.LVL24
+ 1636 0159 60000000 		.4byte	.LVL25
+ 1637 015d 0100     		.2byte	0x1
+ 1638 015f 50       		.byte	0x50
+ 1639 0160 60000000 		.4byte	.LVL25
+ 1640 0164 66000000 		.4byte	.LVL27
+ 1641 0168 0100     		.2byte	0x1
+ 1642 016a 55       		.byte	0x55
+ 1643 016b 66000000 		.4byte	.LVL27
+ 1644 016f 70000000 		.4byte	.LFE62
+ 1645 0173 0100     		.2byte	0x1
+ 1646 0175 50       		.byte	0x50
+ 1647 0176 00000000 		.4byte	0
+ 1648 017a 00000000 		.4byte	0
+ 1649              	.LLST7:
+ 1650 017e 0E000000 		.4byte	.LVL28
+ 1651 0182 28000000 		.4byte	.LVL33
+ 1652 0186 0100     		.2byte	0x1
+ 1653 0188 56       		.byte	0x56
+ 1654 0189 28000000 		.4byte	.LVL33
+ 1655 018d 34000000 		.4byte	.LFE60
+ 1656 0191 0500     		.2byte	0x5
+ 1657 0193 0C       		.byte	0xc
+ 1658 0194 10021A40 		.4byte	0x401a0210
+ 1659 0198 00000000 		.4byte	0
+ 1660 019c 00000000 		.4byte	0
+ 1661              	.LLST8:
+ 1662 01a0 0E000000 		.4byte	.LVL36
+ 1663 01a4 22000000 		.4byte	.LVL38
+ 1664 01a8 0100     		.2byte	0x1
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 43
+
+
+ 1665 01aa 50       		.byte	0x50
+ 1666 01ab 00000000 		.4byte	0
+ 1667 01af 00000000 		.4byte	0
+ 1668              	.LLST9:
+ 1669 01b3 1A000000 		.4byte	.LVL37
+ 1670 01b7 22000000 		.4byte	.LVL38
+ 1671 01bb 0100     		.2byte	0x1
+ 1672 01bd 53       		.byte	0x53
+ 1673 01be 00000000 		.4byte	0
+ 1674 01c2 00000000 		.4byte	0
+ 1675              	.LLST10:
+ 1676 01c6 22000000 		.4byte	.LVL38
+ 1677 01ca 2E000000 		.4byte	.LVL40
+ 1678 01ce 0100     		.2byte	0x1
+ 1679 01d0 50       		.byte	0x50
+ 1680 01d1 2E000000 		.4byte	.LVL40
+ 1681 01d5 30000000 		.4byte	.LVL41
+ 1682 01d9 0500     		.2byte	0x5
+ 1683 01db 03       		.byte	0x3
+ 1684 01dc 00000000 		.4byte	time
+ 1685 01e0 00000000 		.4byte	0
+ 1686 01e4 00000000 		.4byte	0
+ 1687              	.LLST11:
+ 1688 01e8 2C000000 		.4byte	.LVL39
+ 1689 01ec 30000000 		.4byte	.LVL41
+ 1690 01f0 0100     		.2byte	0x1
+ 1691 01f2 54       		.byte	0x54
+ 1692 01f3 00000000 		.4byte	0
+ 1693 01f7 00000000 		.4byte	0
+ 1694              		.section	.debug_aranges,"",%progbits
+ 1695 0000 3C000000 		.4byte	0x3c
+ 1696 0004 0200     		.2byte	0x2
+ 1697 0006 00000000 		.4byte	.Ldebug_info0
+ 1698 000a 04       		.byte	0x4
+ 1699 000b 00       		.byte	0
+ 1700 000c 0000     		.2byte	0
+ 1701 000e 0000     		.2byte	0
+ 1702 0010 00000000 		.4byte	.LFB59
+ 1703 0014 1C000000 		.4byte	.LFE59-.LFB59
+ 1704 0018 00000000 		.4byte	.LFB62
+ 1705 001c 70000000 		.4byte	.LFE62-.LFB62
+ 1706 0020 00000000 		.4byte	.LFB60
+ 1707 0024 34000000 		.4byte	.LFE60-.LFB60
+ 1708 0028 00000000 		.4byte	.LFB63
+ 1709 002c 40000000 		.4byte	.LFE63-.LFB63
+ 1710 0030 00000000 		.4byte	.LFB61
+ 1711 0034 68000000 		.4byte	.LFE61-.LFB61
+ 1712 0038 00000000 		.4byte	0
+ 1713 003c 00000000 		.4byte	0
+ 1714              		.section	.debug_ranges,"",%progbits
+ 1715              	.Ldebug_ranges0:
+ 1716 0000 00000000 		.4byte	.LFB59
+ 1717 0004 1C000000 		.4byte	.LFE59
+ 1718 0008 00000000 		.4byte	.LFB62
+ 1719 000c 70000000 		.4byte	.LFE62
+ 1720 0010 00000000 		.4byte	.LFB60
+ 1721 0014 34000000 		.4byte	.LFE60
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 44
+
+
+ 1722 0018 00000000 		.4byte	.LFB63
+ 1723 001c 40000000 		.4byte	.LFE63
+ 1724 0020 00000000 		.4byte	.LFB61
+ 1725 0024 68000000 		.4byte	.LFE61
+ 1726 0028 00000000 		.4byte	0
+ 1727 002c 00000000 		.4byte	0
+ 1728              		.section	.debug_line,"",%progbits
+ 1729              	.Ldebug_line0:
+ 1730 0000 F5010000 		.section	.debug_str,"MS",%progbits,1
+ 1730      02002801 
+ 1730      00000201 
+ 1730      FB0E0D00 
+ 1730      01010101 
+ 1731              	.LASF31:
+ 1732 0000 72657375 		.ascii	"result\000"
+ 1732      6C7400
+ 1733              	.LASF57:
+ 1734 0007 5F5F6275 		.ascii	"__builtin_puts\000"
+ 1734      696C7469 
+ 1734      6E5F7075 
+ 1734      747300
+ 1735              	.LASF34:
+ 1736 0016 4144435F 		.ascii	"ADC_GetResult16\000"
+ 1736      47657452 
+ 1736      6573756C 
+ 1736      74313600 
+ 1737              	.LASF3:
+ 1738 0026 73686F72 		.ascii	"short int\000"
+ 1738      7420696E 
+ 1738      7400
+ 1739              	.LASF16:
+ 1740 0030 73697A65 		.ascii	"sizetype\000"
+ 1740      74797065 
+ 1740      00
+ 1741              	.LASF30:
+ 1742 0039 44696769 		.ascii	"DigitalFilter_Buffer\000"
+ 1742      74616C46 
+ 1742      696C7465 
+ 1742      725F4275 
+ 1742      66666572 
+ 1743              	.LASF55:
+ 1744 004e 6D61696E 		.ascii	"main\000"
+ 1744      00
+ 1745              	.LASF33:
+ 1746 0053 445F5541 		.ascii	"D_UART_SpiUartWriteTxData\000"
+ 1746      52545F53 
+ 1746      70695561 
+ 1746      72745772 
+ 1746      69746554 
+ 1747              	.LASF37:
+ 1748 006d 5254435F 		.ascii	"RTC_GetTime\000"
+ 1748      47657454 
+ 1748      696D6500 
+ 1749              	.LASF21:
+ 1750 0079 66696C65 		.ascii	"file\000"
+ 1750      00
+ 1751              	.LASF52:
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 45
+
+
+ 1752 007e 433A5C55 		.ascii	"C:\\Users\\okuntso\\Documents\\PSoC Creator\\Diplom"
+ 1752      73657273 
+ 1752      5C6F6B75 
+ 1752      6E74736F 
+ 1752      5C446F63 
+ 1753 00ac 615C4465 		.ascii	"a\\Design01.cydsn\000"
+ 1753      7369676E 
+ 1753      30312E63 
+ 1753      7964736E 
+ 1753      00
+ 1754              	.LASF17:
+ 1755 00bd 5254435F 		.ascii	"RTC_GetSecond\000"
+ 1755      47657453 
+ 1755      65636F6E 
+ 1755      6400
+ 1756              	.LASF50:
+ 1757 00cb 474E5520 		.ascii	"GNU C11 5.4.1 20160609 (release) [ARM/embedded-5-br"
+ 1757      43313120 
+ 1757      352E342E 
+ 1757      31203230 
+ 1757      31363036 
+ 1758 00fe 616E6368 		.ascii	"anch revision 237715] -mcpu=cortex-m0 -mthumb -g -O"
+ 1758      20726576 
+ 1758      6973696F 
+ 1758      6E203233 
+ 1758      37373135 
+ 1759 0131 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1759      66756E63 
+ 1759      74696F6E 
+ 1759      2D736563 
+ 1759      74696F6E 
+ 1760              	.LASF11:
+ 1761 0159 696E7431 		.ascii	"int16\000"
+ 1761      3600
+ 1762              	.LASF40:
+ 1763 015f 6973725F 		.ascii	"isr_adc_StartEx\000"
+ 1763      6164635F 
+ 1763      53746172 
+ 1763      74457800 
+ 1764              	.LASF53:
+ 1765 016f 4D794144 		.ascii	"MyADC\000"
+ 1765      4300
+ 1766              	.LASF41:
+ 1767 0175 4144435F 		.ascii	"ADC_Timer_Start\000"
+ 1767      54696D65 
+ 1767      725F5374 
+ 1767      61727400 
+ 1768              	.LASF0:
+ 1769 0185 666C6F61 		.ascii	"float\000"
+ 1769      7400
+ 1770              	.LASF28:
+ 1771 018b 44696769 		.ascii	"DigitalFilter_ACoefs\000"
+ 1771      74616C46 
+ 1771      696C7465 
+ 1771      725F4143 
+ 1771      6F656673 
+ 1772              	.LASF7:
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 46
+
+
+ 1773 01a0 6C6F6E67 		.ascii	"long long int\000"
+ 1773      206C6F6E 
+ 1773      6720696E 
+ 1773      7400
+ 1774              	.LASF44:
+ 1775 01ae 4144435F 		.ascii	"ADC_Start\000"
+ 1775      53746172 
+ 1775      7400
+ 1776              	.LASF5:
+ 1777 01b8 6C6F6E67 		.ascii	"long int\000"
+ 1777      20696E74 
+ 1777      00
+ 1778              	.LASF26:
+ 1779 01c1 696E7472 		.ascii	"intr_status\000"
+ 1779      5F737461 
+ 1779      74757300 
+ 1780              	.LASF38:
+ 1781 01cd 7072696E 		.ascii	"printf\000"
+ 1781      746600
+ 1782              	.LASF25:
+ 1783 01d4 41636375 		.ascii	"Accumulator\000"
+ 1783      6D756C61 
+ 1783      746F7200 
+ 1784              	.LASF22:
+ 1785 01e0 5F777269 		.ascii	"_write\000"
+ 1785      746500
+ 1786              	.LASF49:
+ 1787 01e7 5254435F 		.ascii	"RTC_SetDateAndTime\000"
+ 1787      53657444 
+ 1787      61746541 
+ 1787      6E645469 
+ 1787      6D6500
+ 1788              	.LASF42:
+ 1789 01fa 4144435F 		.ascii	"ADC_Enable\000"
+ 1789      456E6162 
+ 1789      6C6500
+ 1790              	.LASF19:
+ 1791 0205 696E7075 		.ascii	"inputTime\000"
+ 1791      7454696D 
+ 1791      6500
+ 1792              	.LASF15:
+ 1793 020f 6C6F6E67 		.ascii	"long double\000"
+ 1793      20646F75 
+ 1793      626C6500 
+ 1794              	.LASF23:
+ 1795 021b 44696769 		.ascii	"DigitalFilter_ProcessOneSample\000"
+ 1795      74616C46 
+ 1795      696C7465 
+ 1795      725F5072 
+ 1795      6F636573 
+ 1796              	.LASF2:
+ 1797 023a 756E7369 		.ascii	"unsigned char\000"
+ 1797      676E6564 
+ 1797      20636861 
+ 1797      7200
+ 1798              	.LASF54:
+ 1799 0248 7072696E 		.ascii	"print_time\000"
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 47
+
+
+ 1799      745F7469 
+ 1799      6D6500
+ 1800              	.LASF36:
+ 1801 0253 5254435F 		.ascii	"RTC_Update\000"
+ 1801      55706461 
+ 1801      746500
+ 1802              	.LASF1:
+ 1803 025e 7369676E 		.ascii	"signed char\000"
+ 1803      65642063 
+ 1803      68617200 
+ 1804              	.LASF8:
+ 1805 026a 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1805      206C6F6E 
+ 1805      6720756E 
+ 1805      7369676E 
+ 1805      65642069 
+ 1806              	.LASF9:
+ 1807 0281 756E7369 		.ascii	"unsigned int\000"
+ 1807      676E6564 
+ 1807      20696E74 
+ 1807      00
+ 1808              	.LASF56:
+ 1809 028e 70757473 		.ascii	"puts\000"
+ 1809      00
+ 1810              	.LASF32:
+ 1811 0293 74696D65 		.ascii	"time\000"
+ 1811      00
+ 1812              	.LASF14:
+ 1813 0298 72656733 		.ascii	"reg32\000"
+ 1813      3200
+ 1814              	.LASF35:
+ 1815 029e 49444143 		.ascii	"IDAC_SetValue\000"
+ 1815      5F536574 
+ 1815      56616C75 
+ 1815      6500
+ 1816              	.LASF4:
+ 1817 02ac 73686F72 		.ascii	"short unsigned int\000"
+ 1817      7420756E 
+ 1817      7369676E 
+ 1817      65642069 
+ 1817      6E7400
+ 1818              	.LASF13:
+ 1819 02bf 63686172 		.ascii	"char\000"
+ 1819      00
+ 1820              	.LASF18:
+ 1821 02c4 5254435F 		.ascii	"RTC_GetMinutes\000"
+ 1821      4765744D 
+ 1821      696E7574 
+ 1821      657300
+ 1822              	.LASF24:
+ 1823 02d3 4E657753 		.ascii	"NewSample\000"
+ 1823      616D706C 
+ 1823      6500
+ 1824              	.LASF45:
+ 1825 02dd 4144435F 		.ascii	"ADC_IRQ_Enable\000"
+ 1825      4952515F 
+ 1825      456E6162 
+ARM GAS  C:\Users\okuntso\AppData\Local\Temp\cceWmgJO.s 			page 48
+
+
+ 1825      6C6500
+ 1826              	.LASF10:
+ 1827 02ec 75696E74 		.ascii	"uint32\000"
+ 1827      333200
+ 1828              	.LASF51:
+ 1829 02f3 6D61696E 		.ascii	"main.c\000"
+ 1829      2E6300
+ 1830              	.LASF6:
+ 1831 02fa 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1831      20756E73 
+ 1831      69676E65 
+ 1831      6420696E 
+ 1831      7400
+ 1832              	.LASF12:
+ 1833 030c 646F7562 		.ascii	"double\000"
+ 1833      6C6500
+ 1834              	.LASF29:
+ 1835 0313 44696769 		.ascii	"DigitalFilter_BCoefs\000"
+ 1835      74616C46 
+ 1835      696C7465 
+ 1835      725F4243 
+ 1835      6F656673 
+ 1836              	.LASF39:
+ 1837 0328 445F5541 		.ascii	"D_UART_Start\000"
+ 1837      52545F53 
+ 1837      74617274 
+ 1837      00
+ 1838              	.LASF47:
+ 1839 0335 49444143 		.ascii	"IDAC_Start\000"
+ 1839      5F537461 
+ 1839      727400
+ 1840              	.LASF46:
+ 1841 0340 4144435F 		.ascii	"ADC_StartConvert\000"
+ 1841      53746172 
+ 1841      74436F6E 
+ 1841      76657274 
+ 1841      00
+ 1842              	.LASF20:
+ 1843 0351 72657456 		.ascii	"retVal\000"
+ 1843      616C00
+ 1844              	.LASF27:
+ 1845 0358 61636375 		.ascii	"accumulator\000"
+ 1845      6D756C61 
+ 1845      746F7200 
+ 1846              	.LASF43:
+ 1847 0364 4144435F 		.ascii	"ADC_Init\000"
+ 1847      496E6974 
+ 1847      00
+ 1848              	.LASF48:
+ 1849 036d 5254435F 		.ascii	"RTC_Start\000"
+ 1849      53746172 
+ 1849      7400
+ 1850              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 5.4.1 20160609 (release) [ARM/embedded-5-bran

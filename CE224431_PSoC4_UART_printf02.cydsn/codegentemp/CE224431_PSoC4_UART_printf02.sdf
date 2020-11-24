@@ -1,0 +1,27 @@
+(DELAYFILE
+ (SDFVERSION "IEEE 1497 4.0")
+ (DATE "2020-11-16T20:31:21Z")
+ (DESIGN "CE224431_PSoC4_UART_printf02")
+ (VENDOR "Cypress Semiconductor")
+ (PROGRAM "PSoC Creator")
+ (VERSION " 4.3")
+ (DIVIDER .)
+ (TIMESCALE 1 ns)
+ (CELL
+  (CELLTYPE "CE224431_PSoC4_UART_printf02")
+  (INSTANCE *)
+  (DELAY
+   (ABSOLUTE
+    (INTERCONNECT ClockBlock.hfclk switch_pin\(0\).in_clock (0.000:0.000:0.000))
+    (INTERCONNECT ClockBlock.hfclk InputInterrupt.clock (0.000:0.000:0.000))
+    (INTERCONNECT switch_pin.interrupt InputInterrupt.interrupt (1.000:1.000:1.000))
+    (INTERCONNECT ClockBlock.ff_div_3 \\UART\:SCB\\.clock (0.000:0.000:0.000))
+    (INTERCONNECT \\UART\:tx\(0\)\\.pad_out \\UART\:tx\(0\)\\.pad_in (0.000:0.000:0.000))
+    (INTERCONNECT \\UART\:SCB\\.uart_tx \\UART\:tx\(0\)\\.pin_input (0.000:0.000:0.000))
+    (INTERCONNECT \\UART\:tx\(0\)\\.pad_out \\UART\:tx\(0\)_PAD\\ (0.000:0.000:0.000))
+    (INTERCONNECT \\UART\:tx\(0\)_PAD\\ \\UART\:tx\(0\)\\.pad_in (0.000:0.000:0.000))
+    (INTERCONNECT switch_pin\(0\)_PAD switch_pin\(0\).pad_in (0.000:0.000:0.000))
+   )
+  )
+ )
+)

@@ -1,0 +1,8 @@
+C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/CortexM0/ARM_GCC_541/Debug/CyBootAsmGnu.o : C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/CyBootAsmGnu.s C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/cydevicegnu_trm.inc C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/cyfittergnu.inc 
+
+C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/CyBootAsmGnu.s : 
+
+C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/cydevicegnu_trm.inc : 
+
+C:/Users/okuntso/Documents/PSoC\ Creator/Diploma/CE224431_PSoC4_UART_printf02.cydsn/Generated_Source/PSoC4/cyfittergnu.inc : 
+

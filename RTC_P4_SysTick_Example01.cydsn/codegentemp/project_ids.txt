@@ -1,0 +1,7 @@
+C:\Users\okuntso\Documents\PSoC Creator\Diploma\Design01.cydsn\Design01.cyprj|f02f2a42-0852-4528-beb7-e6740242ef7a
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|b7051555-8873-4f69-b8a1-476955cca02d
+C:\Users\okuntso\Documents\PSoC Creator\4.3\Downloads ( 4.3).cylib\Downloads ( 4.3).cyprj|81367759-d18e-4ad0-b3ce-486330ad8a13
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|ea23e3f4-5379-4216-badc-e1d56d5b34bb
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|9eaaaeb7-913a-4edc-a950-4de4469e225a
+C:\Program Files (x86)\Cypress\PSoC Creator\4.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|18e196fb-a2cb-4934-abfa-622331977375
+C:\Users\okuntso\Documents\PSoC Creator\Diploma\RTC_P4_SysTick_Example01.cydsn\RTC_P4_SysTick_Example01.cyprj|2b377ef9-a24c-4357-93a3-a6a36bb8be29
